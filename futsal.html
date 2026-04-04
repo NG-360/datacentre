@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Le Datacentre — Tirage</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green: #00C58E;
+  --green-dark: #009970;
+  --purple: #6C5CE7;
+  --purple-dark: #5A4BD1;
+  --bg: #0F0F13;
+  --surface: #18181F;
+  --surface2: #21212B;
+  --border: rgba(255,255,255,0.07);
+  --text: #F0EFF8;
+  --muted: #7A798A;
+  --radius: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+
+header {
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -0.5px; }
+.logo span { color: var(--green); }
+.header-badge {
+  font-size: 12px; font-weight: 500; padding: 4px 10px;
+  background: rgba(0,197,142,0.12); color: var(--green);
+  border-radius: 20px; border: 1px solid rgba(0,197,142,0.25);
+}
+
+main { padding: 16px; max-width: 520px; margin: 0 auto; }
+
+.section-title {
+  font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
+  margin: 20px 0 10px;
+}
+
+.counter {
+  font-size: 13px; color: var(--muted); margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.counter-num {
+  font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800;
+  color: var(--green); line-height: 1;
+}
+.counter-max { font-size: 13px; color: var(--muted); }
+
+.pgrid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 6px; margin-bottom: 4px;
+}
+.pc {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 8px;
+  cursor: pointer;
+  transition: all .15s;
+  position: relative;
+  overflow: hidden;
+}
+.pc:active { transform: scale(0.95); }
+.pc.sel {
+  background: rgba(0,197,142,0.1);
+  border-color: var(--green);
+}
+.pc.sel::after {
+  content: '';
+  position: absolute; top: 6px; right: 6px;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green);
+}
+.pname { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.2; }
+.palias {
+  font-size: 10px; color: var(--muted); margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pbadge {
+  font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+  margin-top: 6px; color: var(--muted);
+}
+.pc.sel .pbadge { color: var(--green); }
+
+.sep { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+.guest-form { display: flex; flex-direction: column; gap: 8px; }
+.guest-form input, .guest-form select {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 14px; font-size: 14px;
+  color: var(--text); font-family: 'DM Sans', sans-serif; width: 100%;
+}
+.guest-form input::placeholder { color: var(--muted); }
+.guest-form select option { background: var(--surface2); }
+
+.btn {
+  width: 100%; padding: 15px; border-radius: var(--radius);
+  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+  letter-spacing: 0.5px; cursor: pointer; border: none;
+  transition: all .15s; margin-bottom: 8px;
+}
+.btn:active { transform: scale(0.97); }
+.btn-secondary {
+  background: var(--surface2); color: var(--muted);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+
+.btn-go {
+  background: var(--green); color: #000;
+  font-size: 15px; letter-spacing: 1px;
+  margin-top: 4px;
+}
+.btn-go:hover { background: var(--green-dark); }
+.btn-go:disabled {
+  background: var(--surface2); color: var(--muted);
+  cursor: not-allowed; transform: none;
+}
+
+.result-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.ecart-pill {
+  font-size: 12px; font-weight: 500; padding: 4px 12px; border-radius: 20px;
+}
+.eg { background: rgba(0,197,142,0.15); color: var(--green); border: 1px solid rgba(0,197,142,0.3); }
+.em { background: rgba(253,196,86,0.15); color: #FDC456; border: 1px solid rgba(253,196,86,0.3); }
+.eb { background: rgba(255,87,87,0.15); color: #FF5757; border: 1px solid rgba(255,87,87,0.3); }
+
+.teams { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tcard {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px; overflow: hidden;
+  position: relative;
+}
+.tcard::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+.ta::before { background: var(--green); }
+.tb::before { background: var(--purple); }
+.ttitle {
+  font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 800;
+  letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px;
+}
+.ta .ttitle { color: var(--green); }
+.tb .ttitle { color: var(--purple); }
+.tscore { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+.trow {
+  font-size: 13px; padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text); display: flex; justify-content: space-between;
+}
+.trow:last-child { border-bottom: none; }
+.trow-score { font-size: 11px; color: var(--muted); }
+
+.bars-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px; margin-top: 10px;
+}
+.legend {
+  display: flex; gap: 14px; margin-bottom: 12px; font-size: 11px; color: var(--muted);
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+.brow { margin-bottom: 8px; }
+.blabel {
+  display: flex; justify-content: space-between;
+  font-size: 11px; color: var(--muted); margin-bottom: 4px;
+}
+.btrack { height: 4px; border-radius: 2px; background: rgba(255,255,255,0.07); margin-bottom: 3px; }
+.bfill { height: 100%; border-radius: 2px; transition: width .5s cubic-bezier(.4,0,.2,1); }
+
+.btn-wa {
+  background: transparent; color: var(--green);
+  border: 1px solid rgba(0,197,142,0.4);
+  margin-top: 6px;
+}
+.btn-wa:hover { background: rgba(0,197,142,0.08); }
+.btn-again {
+  background: transparent; color: var(--text);
+  border: 1px solid var(--border); margin-top: 6px;
+}
+.btn-again:hover { background: var(--surface2); }
+
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--green); color: #000;
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px;
+  padding: 10px 20px; border-radius: 20px;
+  opacity: 0; transition: opacity .3s; pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Le Data<span>centre</span></div>
+  <div class="header-badge">Tirage équipes</div>
+</header>
+
+<main>
+
+  <div class="section-title">Joueurs présents</div>
+  <div class="counter">
+    <div class="counter-num" id="cnt">0</div>
+    <div class="counter-max">/ 10 sélectionnés</div>
+  </div>
+  <div class="pgrid" id="pgrid"></div>
+
+  <hr class="sep">
+
+  <div class="section-title">Ajouter un invité</div>
+  <div class="guest-form">
+    <input id="gname" type="text" placeholder="Prénom de l'invité...">
+    <select id="gprofile">
+      <option value="avg">Profil inconnu (moyenne)</option>
+      <option value="atk">Attaquant (rapide, finisseur)</option>
+      <option value="def">Défenseur (solide, physique)</option>
+      <option value="tec">Technicien (dribble, passes)</option>
+      <option value="phy">Athlète (endurance, combat)</option>
+    </select>
+    <button class="btn btn-secondary" onclick="addGuest()">Ajouter l'invité</button>
+  </div>
+
+  <hr class="sep">
+
+  <button class="btn btn-go" id="gobtn" onclick="generate()" disabled>
+    GÉNÉRER LES ÉQUIPES
+  </button>
+
+  <div id="out"></div>
+
+</main>
+
+<div class="toast" id="toast">Copié dans le presse-papier</div>
+
+<script>
+const PLAYERS = [
+  {n:"Loïs",      a:"Le Soldat de Jah",          atk:4.25,def:4.50,phy:4.50,tec:4.00,men:4.42},
+  {n:"Mathieu",   a:"Le Leviathan",               atk:4.70,def:3.98,phy:4.65,tec:4.17,men:4.07},
+  {n:"Boris",     a:"La Torpille de Chât.-Gombert",atk:4.47,def:4.17,phy:4.35,tec:4.65,men:3.67},
+  {n:"Téo",       a:"Le Taxi Fou",                atk:4.40,def:3.53,phy:4.15,tec:4.53,men:4.02},
+  {n:"Rémi",      a:"Le Milaniste",               atk:4.13,def:4.17,phy:4.07,tec:4.30,men:3.84},
+  {n:"Brice",     a:"Monsieur Chaboche",           atk:4.30,def:4.28,phy:3.78,tec:3.78,men:3.90},
+  {n:"Ju",        a:"Le Démarqueur",              atk:3.63,def:3.84,phy:4.21,tec:3.83,men:4.00},
+  {n:"Mathias",   a:"",                           atk:4.33,def:2.67,phy:4.50,tec:4.50,men:3.50},
+  {n:"Maroine",   a:"Le Boy",                     atk:4.67,def:2.83,phy:4.33,tec:4.50,men:3.00},
+  {n:"David",     a:"L'Angliche",                 atk:4.00,def:3.33,phy:4.00,tec:3.67,men:4.17},
+  {n:"Axel",      a:"Le fils de la tante du voisin",atk:3.75,def:3.63,phy:3.46,tec:4.13,men:4.00},
+  {n:"Bastien",   a:"L'Ingénieur",                atk:2.87,def:4.07,phy:4.27,tec:3.00,men:4.65},
+  {n:"Olivier",   a:"L'Argentin",                 atk:3.33,def:3.33,phy:3.33,tec:4.17,men:4.67},
+  {n:"Thomas",    a:"Johnny Sins",                atk:3.15,def:3.92,phy:4.17,tec:3.29,men:4.13},
+  {n:"Seb",       a:"Le Blagueur",                atk:4.00,def:2.83,phy:3.92,tec:4.03,men:3.78},
+  {n:"Guillaume", a:"Le Croco",                   atk:2.77,def:3.90,phy:4.23,tec:2.90,men:4.42},
+  {n:"Toto",      a:"Le Sapeur",                  atk:3.20,def:3.72,phy:3.84,tec:3.14,men:4.28},
+  {n:"Hugo",      a:"La Charge Mentale",          atk:3.28,def:3.31,phy:3.69,tec:3.53,men:4.22},
+  {n:"Jean-Marie",a:"Le Cogneur de St-Brieuc",    atk:4.00,def:3.17,phy:3.50,tec:3.17,men:2.00},
+  {n:"Antoine",   a:"Tony la Trompette",          atk:3.00,def:3.83,phy:3.83,tec:3.00,men:3.83},
+  {n:"Mourad",    a:"Mouradona",                  atk:2.80,def:3.72,phy:4.27,tec:2.88,men:4.18},
+  {n:"Nico",      a:"La Grande Gueule",           atk:2.61,def:3.45,phy:3.69,tec:2.47,men:4.17},
+  {n:"Auré",      a:"Le Baveux",                  atk:2.83,def:3.33,phy:3.28,tec:3.28,men:3.95},
+  {n:"Mika",      a:"Mikachu",                    atk:3.42,def:2.15,phy:3.23,tec:3.36,men:3.36},
+  {n:"Youri",     a:"Souri",                      atk:2.95,def:2.56,phy:2.86,tec:2.94,men:2.50},
+  {n:"Marco",     a:"La Grosse Côte",             atk:2.79,def:2.25,phy:2.88,tec:2.96,men:2.90},
+  {n:"Rémi L.",   a:"La Gommette",                atk:2.33,def:2.67,phy:2.50,tec:2.83,men:3.33},
+  {n:"Edano",     a:"",                           atk:1.83,def:2.00,phy:2.50,tec:1.75,men:3.58},
+  {n:"Christo",   a:"Le Snappeur Fou",            atk:2.73,def:1.44,phy:2.08,tec:3.00,men:1.55},
+];
+
+const PROFILES = {
+  avg:{atk:3.5,def:3.5,phy:3.5,tec:3.5,men:3.5},
+  atk:{atk:4.3,def:2.8,phy:3.8,tec:3.5,men:3.4},
+  def:{atk:2.8,def:4.3,phy:4.0,tec:3.0,men:3.8},
+  tec:{atk:3.2,def:3.2,phy:3.0,tec:4.3,men:3.7},
+  phy:{atk:3.2,def:3.5,phy:4.4,tec:3.0,men:3.3},
+};
+
+const CRIT = [
+  {k:"atk",l:"Attaque"},
+  {k:"def",l:"Défense"},
+  {k:"phy",l:"Physique"},
+  {k:"tec",l:"Technique"},
+  {k:"men",l:"Mental"},
+];
+
+let sel = new Set();
+let guests = [];
+
+function avg(p) {
+  return (p.atk + p.def + p.phy + p.tec + p.men) / 5;
+}
+
+function render() {
+  const all = [...PLAYERS, ...guests];
+  document.getElementById('pgrid').innerHTML = all.map(p => {
+    const s = sel.has(p.n);
+    return `<div class="pc${s ? ' sel' : ''}" onclick="tog('${p.n.replace(/'/g,"\\'")}')">
+      <div class="pname">${p.n}</div>
+      ${p.a ? `<div class="palias">${p.a}</div>` : ''}
+      <div class="pbadge">${avg(p).toFixed(2)}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('cnt').textContent = sel.size;
+  document.getElementById('gobtn').disabled = sel.size !== 10;
+}
+
+function tog(n) {
+  if (sel.has(n)) sel.delete(n);
+  else if (sel.size < 10) sel.add(n);
+  render();
+}
+
+function addGuest() {
+  const n = document.getElementById('gname').value.trim();
+  if (!n) return;
+  const all = [...PLAYERS, ...guests];
+  if (all.find(p => p.n === n)) return;
+  const pr = PROFILES[document.getElementById('gprofile').value];
+  guests.push({n, a: 'Invité', ...pr});
+  document.getElementById('gname').value = '';
+  render();
+}
+
+function bestSplit(pool) {
+  const h = pool.length / 2;
+  let best = Infinity, bestA = null;
+  function go(i, chosen) {
+    if (chosen.length === h) {
+      const cB = pool.filter(p => !chosen.includes(p));
+      const sA = chosen.reduce((s, p) => s + avg(p), 0);
+      const sB = cB.reduce((s, p) => s + avg(p), 0);
+      const globalDiff = Math.abs(sA - sB);
+      const critDiff = CRIT.reduce((s, c) => {
+        const mA = chosen.reduce((x, p) => x + p[c.k], 0) / h;
+        const mB = cB.reduce((x, p) => x + p[c.k], 0) / h;
+        return s + Math.abs(mA - mB);
+      }, 0);
+      const score = globalDiff + critDiff * 0.5;
+      if (score < best) { best = score; bestA = [...chosen]; }
+      return;
+    }
+    if (i >= pool.length) return;
+    if (pool.length - i < h - chosen.length) return;
+    go(i + 1, [...chosen, pool[i]]);
+    go(i + 1, chosen);
+  }
+  go(0, []);
+  return { A: bestA, B: pool.filter(p => !bestA.includes(p)), score: best };
+}
+
+function generate() {
+  const pool = [...PLAYERS, ...guests].filter(p => sel.has(p.n));
+  const { A, B } = bestSplit(pool);
+  const sA = (A.reduce((s, p) => s + avg(p), 0) / 5).toFixed(2);
+  const sB = (B.reduce((s, p) => s + avg(p), 0) / 5).toFixed(2);
+  const ecart = Math.abs(parseFloat(sA) - parseFloat(sB));
+  const ecartClass = ecart < 0.1 ? 'eg' : ecart < 0.3 ? 'em' : 'eb';
+  const ecartText = ecart < 0.1 ? 'Excellent équilibre' : ecart < 0.3 ? 'Bon équilibre' : 'Déséquilibré';
+
+  const bars = CRIT.map(c => {
+    const mA = (A.reduce((s, p) => s + p[c.k], 0) / 5).toFixed(2);
+    const mB = (B.reduce((s, p) => s + p[c.k], 0) / 5).toFixed(2);
+    const mx = Math.max(parseFloat(mA), parseFloat(mB), 1);
+    const pA = (parseFloat(mA) / mx * 100).toFixed(0);
+    const pB = (parseFloat(mB) / mx * 100).toFixed(0);
+    return `<div class="brow">
+      <div class="blabel"><span>${c.l}</span><span>${mA} / ${mB}</span></div>
+      <div class="btrack"><div class="bfill" style="width:${pA}%;background:var(--green)"></div></div>
+      <div class="btrack"><div class="bfill" style="width:${pB}%;background:var(--purple)"></div></div>
+    </div>`;
+  }).join('');
+
+  const waText = `⚽ ÉQUIPES DU SOIR\n\n🟢 Équipe A\n${A.map(p => `• ${p.n}`).join('\n')}\n\n🟣 Équipe B\n${B.map(p => `• ${p.n}`).join('\n')}`;
+
+  document.getElementById('out').innerHTML = `
+  <hr class="sep">
+  <div class="result-header">
+    <div class="section-title" style="margin:0">Résultat</div>
+    <span class="ecart-pill ${ecartClass}">${ecartText} — ${ecart.toFixed(2)}</span>
+  </div>
+  <div class="teams">
+    <div class="tcard ta">
+      <div class="ttitle">Équipe A</div>
+      <div class="tscore">moy. ${sA}</div>
+      ${A.map(p => `<div class="trow"><span>${p.n}</span><span class="trow-score">${avg(p).toFixed(2)}</span></div>`).join('')}
+    </div>
+    <div class="tcard tb">
+      <div class="ttitle">Équipe B</div>
+      <div class="tscore">moy. ${sB}</div>
+      ${B.map(p => `<div class="trow"><span>${p.n}</span><span class="trow-score">${avg(p).toFixed(2)}</span></div>`).join('')}
+    </div>
+  </div>
+  <div class="bars-box">
+    <div class="legend">
+      <span><span class="dot" style="background:var(--green)"></span>Équipe A</span>
+      <span><span class="dot" style="background:var(--purple)"></span>Équipe B</span>
+    </div>
+    ${bars}
+  </div>
+  <button class="btn btn-wa" onclick="copyWA(\`${waText.replace(/`/g,'\\`')}\`)">Copier pour WhatsApp</button>
+  <button class="btn btn-again" onclick="generate()">Regénérer un autre tirage</button>
+  `;
+}
+
+function copyWA(txt) {
+  navigator.clipboard.writeText(txt).then(() => {
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  });
+}
+
+render();
+</script>
+</body>
+</html>
