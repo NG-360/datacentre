@@ -145,6 +145,24 @@ main{padding:16px;max-width:520px;margin:0 auto}
 .info-box{background:#EEF4FB;border:1px solid rgba(0,96,169,0.2);border-radius:10px;padding:10px 14px;font-size:12px;color:#004d87;margin-bottom:12px;line-height:1.6}
 .warn-box{background:#FEF6E7;border:1px solid rgba(160,92,0,0.2);border-radius:10px;padding:10px 14px;font-size:12px;color:#7a4500;margin-bottom:12px;line-height:1.6}
 
+/* Notation */
+.rate-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px}
+.rate-card-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.rate-avatar{font-size:28px;line-height:1}
+.rate-name{font-size:16px;font-weight:500}
+.rate-alias{font-size:11px;color:var(--muted)}
+.rate-criteria{display:flex;flex-direction:column;gap:10px}
+.rate-crit{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.rate-crit-label{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);min-width:70px}
+.stars{display:flex;gap:4px}
+.star{font-size:24px;cursor:pointer;transition:transform .1s;line-height:1;color:var(--surface2);-webkit-text-stroke:1px var(--border2)}
+.star.on{color:#f0a500;-webkit-text-stroke:1px #c88000}
+.star:active{transform:scale(1.2)}
+.rate-already{background:#EAF5F0;border:1px solid rgba(26,122,74,0.2);border-radius:10px;padding:12px 14px;font-size:13px;color:#1a7a4a;text-align:center;margin-bottom:8px}
+.rate-progress{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.rate-progress-bar{height:6px;background:var(--surface2);border-radius:3px;margin-top:6px;overflow:hidden}
+.rate-progress-fill{height:100%;background:var(--red);border-radius:3px;transition:width .4s}
+
 .overlay{display:none;position:fixed;inset:0;z-index:100;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;padding:16px}
 #pitch-overlay{background:rgba(10,10,10,0.88)}
 #profile-overlay{background:rgba(10,10,10,0.6);backdrop-filter:blur(4px)}
@@ -328,6 +346,11 @@ main{padding:16px;max-width:520px;margin:0 auto}
   </div>
 </div>
 
+<!-- ═══ PAGE NOTATION (accessible via ?joueur=Nom) ═══ -->
+<div class="page" id="page-notation">
+  <div id="notation-content"></div>
+</div>
+
 </main>
 
 <div class="toast" id="toast">OK</div>
@@ -441,37 +464,6 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 // ══════════════════════════════════════════
 // INIT — chargement depuis Supabase
 // ══════════════════════════════════════════
-async function init() {
-  setSyncDot('loading');
-  try {
-    // Test de connexion rapide
-    let players = await dbGet('players','order=n.asc');
-    
-    // Si la base est vide, on la peuple avec les données par défaut
-    if(players.length === 0) {
-      showToast('Première connexion — import des joueurs...');
-      for(const p of DEFAULT_PLAYERS) {
-        await dbInsert('players', p);
-      }
-      players = await dbGet('players','order=n.asc');
-    }
-    
-    PLAYERS = players;
-    MATCHES = await dbGet('matches','order=date.desc');
-    
-    setSyncDot('ok');
-    document.getElementById('loading-screen').style.display='none';
-    render();
-  } catch(err) {
-    console.error('Supabase error:', err);
-    setSyncDot('err');
-    document.getElementById('loading-screen').innerHTML=
-      '<div class="loading-logo">Le Data<span>centre</span></div>'
-      +'<div style="font-size:14px;color:var(--red);text-align:center;padding:0 32px">Impossible de se connecter.<br><br><small style="color:var(--muted)">'+String(err.message).slice(0,120)+'</small></div>'
-      +'<button onclick="location.reload()" style="margin-top:16px;padding:12px 24px;background:var(--red);color:#fff;border:none;border-radius:12px;font-family:\'Syne\',sans-serif;font-weight:700;cursor:pointer">Réessayer</button>';
-  }
-}
-
 // Recharger les données (utilisé après modifications)
 async function reloadPlayers() {
   setSyncDot('loading');
@@ -733,13 +725,22 @@ function renderResults(){
     const w=m.score_a>m.score_b?'A':m.score_a<m.score_b?'B':'Nul';
     const d=new Date(m.date).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
     const tA=m.team_a||[];const tB=m.team_b||[];
+    const allPlayers=[...tA,...tB];
+    const baseUrl=location.origin+location.pathname;
+    const waLinks=allPlayers.map(n=>'• '+n+' → '+baseUrl+'?match='+m.id+'&joueur='+encodeURIComponent(n)).join('\n');
+    const waTxt='⭐ NOTEZ LES JOUEURS\nMatch du '+d+'\n\nChacun clique sur son lien :\n'+waLinks;
     return '<div class="match-entry">'
       +'<div class="match-date">'+d+'</div>'
       +'<div class="match-score" style="color:'+(w==='A'?'var(--red)':w==='B'?'var(--blue)':'var(--muted)')+'">'+m.score_a+' — '+m.score_b+'</div>'
       +'<div class="match-teams"><div><div class="match-team-name mt-a">Éq. A'+(w==='A'?' ✓':'')+'</div><div class="match-players">'+tA.join(', ')+'</div></div>'
       +'<div class="match-vs">VS</div>'
       +'<div style="text-align:right"><div class="match-team-name mt-b">Éq. B'+(w==='B'?' ✓':'')+'</div><div class="match-players">'+tB.join(', ')+'</div></div></div>'
-      +'<button onclick="deleteMatch('+m.id+')" style="margin-top:10px;width:100%;padding:8px;background:transparent;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted);cursor:pointer;font-family:\'DM Sans\',sans-serif">Supprimer</button>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px">'
+      +'<button onclick="copyRatingLinks('+JSON.stringify(waTxt).replace(/'/g,"\\'",'g')+')" style="padding:8px;background:transparent;border:1px solid rgba(0,96,169,0.3);border-radius:8px;font-size:12px;color:var(--blue);cursor:pointer;font-family:\'DM Sans\',sans-serif">Envoyer notation</button>'
+      +'<button onclick="showRatingProgress('+m.id+')" style="padding:8px;background:transparent;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted);cursor:pointer;font-family:\'DM Sans\',sans-serif">Voir avancement</button>'
+      +'</div>'
+      +'<div id="progress-'+m.id+'" style="margin-top:8px"></div>'
+      +'<button onclick="deleteMatch('+m.id+')" style="margin-top:6px;width:100%;padding:8px;background:transparent;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted);cursor:pointer;font-family:\'DM Sans\',sans-serif">Supprimer</button>'
       +'</div>';
   }).join('');
 }
@@ -1102,8 +1103,237 @@ function downloadPitch(){
   a.href=document.getElementById('pitch-canvas').toDataURL('image/png');a.click();
 }
 
+// ══════════════════════════════════════════
+// NOTATION POST-MATCH
+// ══════════════════════════════════════════
+
+// Copier les liens WhatsApp
+function copyRatingLinks(txt){
+  navigator.clipboard.writeText(txt).then(()=>showToast('Liens copiés pour WhatsApp !'));
+}
+
+// Afficher la progression des notations d'un match
+async function showRatingProgress(matchId){
+  const el=document.getElementById('progress-'+matchId);
+  el.innerHTML='<div style="font-size:12px;color:var(--muted);padding:6px 0">Chargement...</div>';
+  try{
+    const match=MATCHES.find(m=>m.id===matchId);
+    if(!match)return;
+    const players=[...(match.team_a||[]),...(match.team_b||[])];
+    const ratings=await dbGet('ratings','match_id=eq.'+matchId+'&select=rater_name');
+    const raters=[...new Set(ratings.map(r=>r.rater_name))];
+    const done=raters.length;
+    const total=players.length;
+    const pct=total>0?Math.round(done/total*100):0;
+    const missing=players.filter(p=>!raters.includes(p));
+    el.innerHTML='<div class="rate-progress">'
+      +'<div style="display:flex;justify-content:space-between;font-size:12px">'
+      +'<span style="color:var(--muted)">Notations reçues</span>'
+      +'<span style="font-weight:500">'+done+' / '+total+'</span>'
+      +'</div>'
+      +'<div class="rate-progress-bar"><div class="rate-progress-fill" style="width:'+pct+'%"></div></div>'
+      +(missing.length?'<div style="font-size:11px;color:var(--muted);margin-top:6px">En attente : '+missing.join(', ')+'</div>':'')
+      +(done>=2?'<button onclick="applyRatings('+matchId+')" style="margin-top:10px;width:100%;padding:8px;background:var(--red);border:none;border-radius:8px;font-size:12px;color:#fff;cursor:pointer;font-family:\'Syne\',sans-serif;font-weight:700">Appliquer les notes ('+done+' réponses)</button>':'')
+      +'</div>';
+  }catch(e){el.innerHTML='<div style="font-size:12px;color:var(--red);padding:6px 0">Erreur chargement</div>';}
+}
+
+// Appliquer les notes — recalculer les scores des joueurs
+async function applyRatings(matchId){
+  if(!confirm('Mettre à jour les scores des joueurs avec les notations de ce match ?'))return;
+  setSyncDot('loading');
+  try{
+    const ratings=await dbGet('ratings','match_id=eq.'+matchId);
+    // Grouper par joueur noté
+    const byPlayer={};
+    ratings.forEach(r=>{
+      if(!byPlayer[r.rated_name])byPlayer[r.rated_name]={atk:[],def:[],phy:[]};
+      if(r.atk)byPlayer[r.rated_name].atk.push(r.atk);
+      if(r.def)byPlayer[r.rated_name].def.push(r.def);
+      if(r.phy)byPlayer[r.rated_name].phy.push(r.phy);
+    });
+    // Pour chaque joueur noté, faire la moyenne pondérée (80% ancienne note, 20% nouvelles)
+    for(const [name,notes] of Object.entries(byPlayer)){
+      const p=PLAYERS.find(x=>x.n===name);
+      if(!p)continue;
+      const avg3=(arr)=>arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:null;
+      const newAtk=avg3(notes.atk);
+      const newDef=avg3(notes.def);
+      const newPhy=avg3(notes.phy);
+      // Pondération : 80% note existante + 20% nouvelle note collective
+      const blend=(old,nw)=>nw!==null?Math.min(5,Math.max(1,Math.round((old*0.8+nw*0.2)*100)/100)):old;
+      const updated={
+        atk:blend(p.atk,newAtk),
+        def:blend(p.def,newDef),
+        phy:blend(p.phy,newPhy),
+      };
+      await dbUpdate('players',name,updated);
+      Object.assign(p,updated);
+    }
+    setSyncDot('ok');
+    render();
+    showToast('Notes appliquées avec succès !');
+  }catch(e){setSyncDot('err');showToast('Erreur application notes',true);}
+}
+
+// ── Page notation joueur (via URL ?match=X&joueur=Y) ──
+let ratingScores={};
+
+async function initRatingPage(matchId,joueurName){
+  // Masquer header nav, afficher page notation
+  document.querySelector('.nav-tabs').style.display='none';
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-notation').classList.add('active');
+  document.title='Notation — Le Datacentre';
+
+  const el=document.getElementById('notation-content');
+  el.innerHTML='<div style="text-align:center;padding:40px 0;color:var(--muted);font-size:14px">Chargement...</div>';
+
+  try{
+    // Charger le match
+    const matches=await dbGet('matches','id=eq.'+matchId);
+    if(!matches.length){el.innerHTML='<p style="color:var(--red);text-align:center;padding:40px 16px">Match introuvable.</p>';return;}
+    const match=matches[0];
+    const allPlayers=[...(match.team_a||[]),...(match.team_b||[])];
+
+    if(!allPlayers.includes(joueurName)){
+      el.innerHTML='<p style="color:var(--red);text-align:center;padding:40px 16px">Ce joueur ne fait pas partie de ce match.</p>';return;
+    }
+
+    // Vérifier si déjà noté
+    const existing=await dbGet('ratings','match_id=eq.'+matchId+'&rater_name=eq.'+encodeURIComponent(joueurName));
+    const d=new Date(match.date).toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
+    const toRate=allPlayers.filter(n=>n!==joueurName);
+
+    ratingScores={};
+    toRate.forEach(n=>{ratingScores[n]={atk:0,def:0,phy:0};});
+
+    // Pré-remplir si déjà des notes
+    if(existing.length){
+      existing.forEach(r=>{
+        if(ratingScores[r.rated_name])ratingScores[r.rated_name]={atk:r.atk||0,def:r.def||0,phy:r.phy||0};
+      });
+    }
+
+    const raterP=PLAYERS.find(p=>p.n===joueurName);
+
+    let html=''
+      +'<div style="text-align:center;padding:20px 0 10px">'
+      +'<div style="font-size:32px">'+(raterP?.e||'⚽')+'</div>'
+      +'<div style="font-family:\'Syne\',sans-serif;font-weight:800;font-size:20px;margin-top:6px">'+esc(joueurName)+'</div>'
+      +'<div style="font-size:13px;color:var(--muted);margin-top:4px">Match du '+d+'</div>'
+      +'</div>';
+
+    if(existing.length){
+      html+='<div class="rate-already">Tu as déjà noté ce match. Tu peux modifier tes notes ci-dessous.</div>';
+    }
+
+    html+='<div class="info-box">Note chaque joueur sur 3 critères. Tes notes sont anonymes pour les autres joueurs.</div>';
+
+    toRate.forEach(name=>{
+      const pp=PLAYERS.find(x=>x.n===name);
+      const s=ratingScores[name];
+      html+='<div class="rate-card" id="rcard-'+esc(name)+'">'
+        +'<div class="rate-card-header">'
+        +'<div class="rate-avatar">'+(pp?.e||'⚽')+'</div>'
+        +'<div><div class="rate-name">'+esc(name)+'</div>'+(pp?.a?'<div class="rate-alias">"'+esc(pp.a)+'"</div>':'')+'</div>'
+        +'</div>'
+        +'<div class="rate-criteria">'
+        +['atk','def','phy'].map((k,ki)=>{
+          const labels=['Attaque','Défense','Physique'];
+          return '<div class="rate-crit">'
+            +'<span class="rate-crit-label">'+labels[ki]+'</span>'
+            +'<div class="stars" id="stars-'+esc(name)+'-'+k+'">'
+            +[1,2,3,4,5].map(v=>'<span class="star'+(s[k]>=v?' on':'')+'" onclick="setStar(\''+esc(name)+'\',\''+k+'\','+v+')">★</span>').join('')
+            +'</div>'
+            +'</div>';
+        }).join('')
+        +'</div>'
+        +'</div>';
+    });
+
+    html+='<button class="btn btn-go" style="margin-top:8px" onclick="submitRatings('+matchId+',\''+esc(joueurName)+'\')">Envoyer mes notes</button>';
+    html+='<p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px;padding-bottom:24px">Tes notes sont anonymes. Elles influencent progressivement les scores des joueurs.</p>';
+
+    el.innerHTML=html;
+  }catch(e){el.innerHTML='<p style="color:var(--red);text-align:center;padding:40px 16px">Erreur de chargement. Vérifie ta connexion.</p>';}
+}
+
+function setStar(name,crit,val){
+  ratingScores[name][crit]=val;
+  const container=document.getElementById('stars-'+name+'-'+crit);
+  if(!container)return;
+  container.querySelectorAll('.star').forEach((s,i)=>{
+    s.classList.toggle('on',i<val);
+  });
+}
+
+async function submitRatings(matchId,raterName){
+  // Vérifier que tout est noté
+  const toRate=Object.keys(ratingScores);
+  const incomplete=toRate.filter(n=>!ratingScores[n].atk||!ratingScores[n].def||!ratingScores[n].phy);
+  if(incomplete.length){
+    showToast('Note tous les joueurs avant d\'envoyer !',true);
+    // Mettre en évidence les cartes incomplètes
+    incomplete.forEach(n=>{
+      const card=document.getElementById('rcard-'+n);
+      if(card){card.style.border='1.5px solid var(--red)';setTimeout(()=>card.style.border='',2000);}
+    });
+    return;
+  }
+  setSyncDot('loading');
+  try{
+    // Supprimer les anciennes notes de ce rater pour ce match
+    await fetch(SUPA_URL+'/rest/v1/ratings?match_id=eq.'+matchId+'&rater_name=eq.'+encodeURIComponent(raterName),{method:'DELETE',headers:HEADERS});
+    // Insérer les nouvelles
+    const rows=toRate.map(n=>({match_id:matchId,rater_name:raterName,rated_name:n,...ratingScores[n]}));
+    await dbInsert('ratings',rows);
+    setSyncDot('ok');
+    document.getElementById('notation-content').innerHTML=
+      '<div style="text-align:center;padding:60px 16px">'
+      +'<div style="font-size:56px;margin-bottom:16px">✅</div>'
+      +'<div style="font-family:\'Syne\',sans-serif;font-weight:800;font-size:22px;margin-bottom:8px">Notes envoyées !</div>'
+      +'<div style="font-size:14px;color:var(--muted)">Merci '+esc(raterName)+'. Tes notes sont anonymes et seront intégrées aux scores.</div>'
+      +'</div>';
+  }catch(e){setSyncDot('err');showToast('Erreur envoi. Réessaie.',true);}
+}
+
 // Lancement
 init();
+
+async function init() {
+  // Détecter si c'est un lien de notation
+  const params=new URLSearchParams(location.search);
+  const matchId=params.get('match');
+  const joueurName=params.get('joueur');
+
+  setSyncDot('loading');
+  try{
+    let players=await dbGet('players','order=n.asc');
+    if(players.length===0){
+      for(const p of DEFAULT_PLAYERS) await dbInsert('players',p);
+      players=await dbGet('players','order=n.asc');
+    }
+    PLAYERS=players;
+    MATCHES=await dbGet('matches','order=date.desc');
+    setSyncDot('ok');
+    document.getElementById('loading-screen').style.display='none';
+
+    if(matchId&&joueurName){
+      // Mode notation — afficher directement la page de notation
+      await initRatingPage(parseInt(matchId),decodeURIComponent(joueurName));
+    } else {
+      render();
+    }
+  }catch(err){
+    console.error('Supabase error:',err);
+    setSyncDot('err');
+    document.getElementById('loading-screen').innerHTML=
+      '<div class="loading-logo">Le Data<span>centre</span></div>'
+      +'<div style="font-size:14px;color:var(--red);text-align:center;padding:0 32px">Impossible de se connecter.<br><br><small style="color:var(--muted)">'+String(err.message).slice(0,120)+'</small></div>'
+      +'<button onclick="location.reload()" style="margin-top:16px;padding:12px 24px;background:var(--red);color:#fff;border:none;border-radius:12px;font-family:\'Syne\',sans-serif;font-weight:700;cursor:pointer">Réessayer</button>';
+  }
+}
 
 // Enregistrement PWA
 if('serviceWorker' in navigator) {
