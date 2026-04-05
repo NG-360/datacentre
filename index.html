@@ -354,7 +354,9 @@ main{padding:16px;max-width:520px;margin:0 auto}
 // ══════════════════════════════════════════
 const SUPA_URL = 'https://qnfwlifbwcskhvryfnfq.supabase.co';
 const SUPA_KEY = 'sb_publishable_8ehgMfb3AOR9N-ar003l8Q_Tmk-Chff';
-const HEADERS  = {'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY};
+// Les nouvelles clés sb_publishable_ ne sont PAS des JWT
+// → Authorization doit être absent ou identique à apikey (pas "Bearer ...")
+const HEADERS  = {'Content-Type':'application/json','apikey':SUPA_KEY};
 
 async function dbGet(table, params='') {
   const r = await fetch(SUPA_URL+'/rest/v1/'+table+'?'+params, {headers:{...HEADERS,'Prefer':'return=representation'}});
@@ -366,8 +368,8 @@ async function dbInsert(table, data) {
   if(!r.ok) throw new Error(await r.text());
   return r.json();
 }
-async function dbUpdate(table, id, data) {
-  const r = await fetch(SUPA_URL+'/rest/v1/'+table+'?n=eq.'+encodeURIComponent(id), {method:'PATCH',headers:{...HEADERS,'Prefer':'return=representation'},body:JSON.stringify(data)});
+async function dbUpdate(table, name, data) {
+  const r = await fetch(SUPA_URL+'/rest/v1/'+table+'?n=eq.'+encodeURIComponent(name), {method:'PATCH',headers:{...HEADERS,'Prefer':'return=representation'},body:JSON.stringify(data)});
   if(!r.ok) throw new Error(await r.text());
   return r.json();
 }
@@ -436,7 +438,7 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 async function init() {
   setSyncDot('loading');
   try {
-    // Charger les joueurs
+    // Test de connexion rapide
     let players = await dbGet('players','order=n.asc');
     
     // Si la base est vide, on la peuple avec les données par défaut
@@ -455,10 +457,11 @@ async function init() {
     document.getElementById('loading-screen').style.display='none';
     render();
   } catch(err) {
+    console.error('Supabase error:', err);
     setSyncDot('err');
     document.getElementById('loading-screen').innerHTML=
       '<div class="loading-logo">Le Data<span>centre</span></div>'
-      +'<div style="font-size:14px;color:var(--red);text-align:center;padding:0 32px">Impossible de se connecter à la base de données.<br><br>Vérifie ta connexion internet.</div>'
+      +'<div style="font-size:14px;color:var(--red);text-align:center;padding:0 32px">Impossible de se connecter.<br><br><small style="color:var(--muted)">'+String(err.message).slice(0,120)+'</small></div>'
       +'<button onclick="location.reload()" style="margin-top:16px;padding:12px 24px;background:var(--red);color:#fff;border:none;border-radius:12px;font-family:\'Syne\',sans-serif;font-weight:700;cursor:pointer">Réessayer</button>';
   }
 }
