@@ -22,14 +22,36 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
 
-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--white);z-index:10}
-.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:19px;letter-spacing:-0.5px;color:var(--black)}
-.logo span{color:var(--red)}
-.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--gray);display:inline-block;margin-left:6px;transition:background .3s}
-.sync-dot.ok{background:#1a7a4a}.sync-dot.loading{background:#a05c00}.sync-dot.err{background:var(--red)}
-.nav-tabs{display:flex;gap:4px;flex-wrap:wrap}
-.nav-tab{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.5px;padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s}
-.nav-tab.active{background:var(--red);color:var(--white);border-color:var(--red)}
+header{
+  padding:0 16px;
+  height:56px;
+  background:var(--red);
+  display:flex;align-items:center;justify-content:center;
+  position:sticky;top:0;z-index:10;
+}
+.burger{position:absolute;left:16px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:6px;display:flex;flex-direction:column;gap:5px}
+.burger span{display:block;width:22px;height:2px;background:rgba(255,255,255,0.9);border-radius:2px;transition:all .2s}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;letter-spacing:-0.5px;color:var(--white);text-align:center}
+.logo-dot{color:rgba(255,255,255,0.55)}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.4);display:inline-block;margin-left:6px;transition:background .3s;vertical-align:middle}
+.sync-dot.ok{background:rgba(255,255,255,0.9)}.sync-dot.loading{background:#FDC456}.sync-dot.err{background:#ff8080}
+
+/* Burger menu drawer */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:50;opacity:0;pointer-events:none;transition:opacity .25s}
+.drawer-overlay.open{opacity:1;pointer-events:all}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:260px;background:var(--white);z-index:51;transform:translateX(-100%);transition:transform .25s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:4px 0 24px rgba(0,0,0,0.08)}
+.drawer.open{transform:translateX(0)}
+.drawer-header{background:var(--red);padding:20px 20px 16px;display:flex;align-items:flex-end;justify-content:space-between}
+.drawer-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--white)}
+.drawer-close{background:none;border:none;color:rgba(255,255,255,0.8);font-size:22px;cursor:pointer;line-height:1;padding:0}
+.drawer-nav{flex:1;padding:12px 0;overflow-y:auto}
+.drawer-item{display:flex;align-items:center;gap:12px;padding:14px 20px;cursor:pointer;transition:background .12s;border:none;background:none;width:100%;text-align:left}
+.drawer-item:hover{background:var(--bg)}
+.drawer-item.active{background:#FFF5F6}
+.drawer-item-icon{font-size:18px;width:24px;text-align:center}
+.drawer-item-label{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.3px;color:var(--text)}
+.drawer-item.active .drawer-item-label{color:var(--red)}
+.drawer-sep{height:1px;background:var(--border);margin:8px 20px}
 
 main{padding:16px;max-width:520px;margin:0 auto}
 .page{display:none}.page.active{display:block}
@@ -214,15 +236,44 @@ main{padding:16px;max-width:520px;margin:0 auto}
 </div>
 
 <header>
-  <div class="logo">Le Data<span>centre</span><span class="sync-dot" id="sync-dot" title="Statut connexion"></span></div>
-  <div class="nav-tabs">
-    <button class="nav-tab active" onclick="switchPage('tirage',this)">Tirage</button>
-    <button class="nav-tab" onclick="switchPage('manuel',this)">Manuel</button>
-    <button class="nav-tab" onclick="switchPage('resultats',this)">Résultats</button>
-    <button class="nav-tab" onclick="switchPage('stats',this)">Stats</button>
-    <button class="nav-tab" onclick="switchPage('admin',this)">Annuaire</button>
-  </div>
+  <button class="burger" onclick="openDrawer()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="logo">Le Datacentre<span class="sync-dot" id="sync-dot"></span></div>
 </header>
+
+<!-- Burger drawer -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div class="drawer-logo">Le Datacentre</div>
+    <button class="drawer-close" onclick="closeDrawer()">×</button>
+  </div>
+  <nav class="drawer-nav">
+    <button class="drawer-item active" id="nav-tirage" onclick="switchPage('tirage',this)">
+      <span class="drawer-item-icon">⚽</span>
+      <span class="drawer-item-label">Tirage auto</span>
+    </button>
+    <button class="drawer-item" id="nav-manuel" onclick="switchPage('manuel',this)">
+      <span class="drawer-item-icon">✏️</span>
+      <span class="drawer-item-label">Composition manuelle</span>
+    </button>
+    <div class="drawer-sep"></div>
+    <button class="drawer-item" id="nav-resultats" onclick="switchPage('resultats',this)">
+      <span class="drawer-item-icon">📋</span>
+      <span class="drawer-item-label">Résultats</span>
+    </button>
+    <button class="drawer-item" id="nav-stats" onclick="switchPage('stats',this)">
+      <span class="drawer-item-icon">📊</span>
+      <span class="drawer-item-label">Statistiques</span>
+    </button>
+    <div class="drawer-sep"></div>
+    <button class="drawer-item" id="nav-admin" onclick="switchPage('admin',this)">
+      <span class="drawer-item-icon">🗂️</span>
+      <span class="drawer-item-label">Annuaire</span>
+    </button>
+  </nav>
+</div>
 
 <main>
 
@@ -484,13 +535,25 @@ async function reloadMatches() {
 }
 
 // ══════════════════════════════════════════
-// NAVIGATION
+// NAVIGATION — BURGER DRAWER
 // ══════════════════════════════════════════
-function switchPage(page,btn){
+function openDrawer(){
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer-overlay').classList.add('open');
+}
+function closeDrawer(){
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+}
+
+function switchPage(page, btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.drawer-item').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
-  btn.classList.add('active');
+  // Activer le bon item dans le drawer
+  const navEl = document.getElementById('nav-'+page);
+  if(navEl) navEl.classList.add('active');
+  closeDrawer();
   if(page==='resultats'){reloadMatches().then(renderResults);}
   if(page==='stats'){reloadMatches().then(()=>{renderStats();renderDuos();});}
   if(page==='admin')renderAdmin();
@@ -725,10 +788,9 @@ function renderResults(){
     const w=m.score_a>m.score_b?'A':m.score_a<m.score_b?'B':'Nul';
     const d=new Date(m.date).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
     const tA=m.team_a||[];const tB=m.team_b||[];
-    const allPlayers=[...tA,...tB];
-    const baseUrl=location.origin+location.pathname;
-    const waLinks=allPlayers.map(n=>'• '+n+' → '+baseUrl+'?match='+m.id+'&joueur='+encodeURIComponent(n)).join('\n');
-    const waTxt='⭐ NOTEZ LES JOUEURS\nMatch du '+d+'\n\nChacun clique sur son lien :\n'+waLinks;
+    // Un seul lien par match — le joueur choisit son nom sur place
+    const ratingUrl=location.origin+location.pathname+'?match='+m.id;
+    const waTxt='⭐ NOTEZ LES JOUEURS !\nMatch du '+d+' ('+m.score_a+'-'+m.score_b+')\n\nOuvrez ce lien et notez vos coéquipiers (2 min) :\n'+ratingUrl;
     return '<div class="match-entry">'
       +'<div class="match-date">'+d+'</div>'
       +'<div class="match-score" style="color:'+(w==='A'?'var(--red)':w==='B'?'var(--blue)':'var(--muted)')+'">'+m.score_a+' — '+m.score_b+'</div>'
@@ -736,13 +798,17 @@ function renderResults(){
       +'<div class="match-vs">VS</div>'
       +'<div style="text-align:right"><div class="match-team-name mt-b">Éq. B'+(w==='B'?' ✓':'')+'</div><div class="match-players">'+tB.join(', ')+'</div></div></div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px">'
-      +'<button onclick="copyRatingLinks('+JSON.stringify(waTxt).replace(/'/g,"\\'",'g')+')" style="padding:8px;background:transparent;border:1px solid rgba(0,96,169,0.3);border-radius:8px;font-size:12px;color:var(--blue);cursor:pointer;font-family:\'DM Sans\',sans-serif">Envoyer notation</button>'
-      +'<button onclick="showRatingProgress('+m.id+')" style="padding:8px;background:transparent;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted);cursor:pointer;font-family:\'DM Sans\',sans-serif">Voir avancement</button>'
+      +'<button onclick="copyWArating(\''+ratingUrl.replace(/'/g,"\\'")+'\',' +JSON.stringify(waTxt)+')" style="padding:9px;background:rgba(0,96,169,0.07);border:1px solid rgba(0,96,169,0.25);border-radius:8px;font-size:12px;font-weight:600;color:var(--blue);cursor:pointer;font-family:\'DM Sans\',sans-serif">Envoyer notation</button>'
+      +'<button onclick="showRatingProgress('+m.id+',this)" style="padding:9px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;font-family:\'DM Sans\',sans-serif">Avancement</button>'
       +'</div>'
       +'<div id="progress-'+m.id+'" style="margin-top:8px"></div>'
       +'<button onclick="deleteMatch('+m.id+')" style="margin-top:6px;width:100%;padding:8px;background:transparent;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted);cursor:pointer;font-family:\'DM Sans\',sans-serif">Supprimer</button>'
       +'</div>';
   }).join('');
+}
+
+function copyWArating(url, txt){
+  navigator.clipboard.writeText(txt).then(()=>showToast('Message copié pour WhatsApp !'));
 }
 
 // ══════════════════════════════════════════
@@ -1107,11 +1173,6 @@ function downloadPitch(){
 // NOTATION POST-MATCH
 // ══════════════════════════════════════════
 
-// Copier les liens WhatsApp
-function copyRatingLinks(txt){
-  navigator.clipboard.writeText(txt).then(()=>showToast('Liens copiés pour WhatsApp !'));
-}
-
 // Afficher la progression des notations d'un match
 async function showRatingProgress(matchId){
   const el=document.getElementById('progress-'+matchId);
@@ -1179,9 +1240,8 @@ async function applyRatings(matchId){
 // ── Page notation joueur (via URL ?match=X&joueur=Y) ──
 let ratingScores={};
 
-async function initRatingPage(matchId,joueurName){
-  // Masquer header nav, afficher page notation
-  document.querySelector('.nav-tabs').style.display='none';
+async function initRatingPage(matchId){
+  document.querySelector('.burger').style.display='none';
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-notation').classList.add('active');
   document.title='Notation — Le Datacentre';
@@ -1190,73 +1250,81 @@ async function initRatingPage(matchId,joueurName){
   el.innerHTML='<div style="text-align:center;padding:40px 0;color:var(--muted);font-size:14px">Chargement...</div>';
 
   try{
-    // Charger le match
     const matches=await dbGet('matches','id=eq.'+matchId);
     if(!matches.length){el.innerHTML='<p style="color:var(--red);text-align:center;padding:40px 16px">Match introuvable.</p>';return;}
     const match=matches[0];
     const allPlayers=[...(match.team_a||[]),...(match.team_b||[])];
-
-    if(!allPlayers.includes(joueurName)){
-      el.innerHTML='<p style="color:var(--red);text-align:center;padding:40px 16px">Ce joueur ne fait pas partie de ce match.</p>';return;
-    }
-
-    // Vérifier si déjà noté
-    const existing=await dbGet('ratings','match_id=eq.'+matchId+'&rater_name=eq.'+encodeURIComponent(joueurName));
     const d=new Date(match.date).toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
-    const toRate=allPlayers.filter(n=>n!==joueurName);
 
+    // Étape 1 — choisir son nom
+    el.innerHTML=
+      '<div style="text-align:center;padding:24px 0 16px">'
+      +'<div style="font-size:36px">⭐</div>'
+      +'<div style="font-family:\'Syne\',sans-serif;font-weight:800;font-size:20px;margin-top:8px">Notation du match</div>'
+      +'<div style="font-size:13px;color:var(--muted);margin-top:4px">'+d+' — '+match.score_a+' - '+match.score_b+'</div>'
+      +'</div>'
+      +'<div class="info-box">Sélectionne ton prénom pour commencer. Tes notes seront anonymes pour tes coéquipiers.</div>'
+      +'<div class="section-title">Je suis...</div>'
+      +'<div style="display:flex;flex-direction:column;gap:6px">'
+      +allPlayers.map(name=>{
+        const pp=PLAYERS.find(x=>x.n===name);
+        return '<button onclick="startRating('+matchId+',\''+name.replace(/'/g,"\\'")+'\')" style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:15px;font-weight:500;font-family:\'DM Sans\',sans-serif;color:var(--text);transition:all .12s;text-align:left">'
+          +'<span style="font-size:24px">'+(pp?.e||'⚽')+'</span>'
+          +'<span>'+esc(name)+'</span>'
+          +'</button>';
+      }).join('')
+      +'</div>';
+  }catch(e){el.innerHTML='<p style="color:var(--red);text-align:center;padding:40px 16px">Erreur de chargement.</p>';}
+}
+
+async function startRating(matchId, joueurName){
+  const el=document.getElementById('notation-content');
+  el.innerHTML='<div style="text-align:center;padding:40px 0;color:var(--muted)">Chargement...</div>';
+
+  try{
+    const matches=await dbGet('matches','id=eq.'+matchId);
+    const match=matches[0];
+    const allPlayers=[...(match.team_a||[]),...(match.team_b||[])];
+    const toRate=allPlayers.filter(n=>n!==joueurName);
+    const d=new Date(match.date).toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
+
+    // Vérifier notes existantes
+    const existing=await dbGet('ratings','match_id=eq.'+matchId+'&rater_name=eq.'+encodeURIComponent(joueurName));
     ratingScores={};
     toRate.forEach(n=>{ratingScores[n]={atk:0,def:0,phy:0};});
-
-    // Pré-remplir si déjà des notes
-    if(existing.length){
-      existing.forEach(r=>{
-        if(ratingScores[r.rated_name])ratingScores[r.rated_name]={atk:r.atk||0,def:r.def||0,phy:r.phy||0};
-      });
-    }
+    existing.forEach(r=>{if(ratingScores[r.rated_name])ratingScores[r.rated_name]={atk:r.atk||0,def:r.def||0,phy:r.phy||0};});
 
     const raterP=PLAYERS.find(p=>p.n===joueurName);
-
     let html=''
-      +'<div style="text-align:center;padding:20px 0 10px">'
-      +'<div style="font-size:32px">'+(raterP?.e||'⚽')+'</div>'
-      +'<div style="font-family:\'Syne\',sans-serif;font-weight:800;font-size:20px;margin-top:6px">'+esc(joueurName)+'</div>'
-      +'<div style="font-size:13px;color:var(--muted);margin-top:4px">Match du '+d+'</div>'
+      +'<div style="display:flex;align-items:center;gap:10px;padding:16px 0 12px">'
+      +'<button onclick="initRatingPage('+matchId+')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);padding:0">←</button>'
+      +'<div><div style="font-family:\'Syne\',sans-serif;font-weight:800;font-size:17px">'+(raterP?.e||'⚽')+' '+esc(joueurName)+'</div>'
+      +'<div style="font-size:12px;color:var(--muted)">Match du '+d+'</div></div>'
       +'</div>';
 
-    if(existing.length){
-      html+='<div class="rate-already">Tu as déjà noté ce match. Tu peux modifier tes notes ci-dessous.</div>';
-    }
-
-    html+='<div class="info-box">Note chaque joueur sur 3 critères. Tes notes sont anonymes pour les autres joueurs.</div>';
+    if(existing.length) html+='<div class="rate-already">Tu as déjà noté ce match — tu peux modifier.</div>';
+    html+='<div class="info-box" style="margin-bottom:14px">Note chaque joueur sur 3 critères (1 à 5 étoiles). Anonyme pour tous.</div>';
 
     toRate.forEach(name=>{
       const pp=PLAYERS.find(x=>x.n===name);
       const s=ratingScores[name];
-      html+='<div class="rate-card" id="rcard-'+esc(name)+'">'
-        +'<div class="rate-card-header">'
-        +'<div class="rate-avatar">'+(pp?.e||'⚽')+'</div>'
-        +'<div><div class="rate-name">'+esc(name)+'</div>'+(pp?.a?'<div class="rate-alias">"'+esc(pp.a)+'"</div>':'')+'</div>'
-        +'</div>'
+      html+='<div class="rate-card" id="rcard-'+name.replace(/[^a-zA-Z0-9]/g,'_')+'">'
+        +'<div class="rate-card-header"><div class="rate-avatar">'+(pp?.e||'⚽')+'</div>'
+        +'<div><div class="rate-name">'+esc(name)+'</div>'+(pp?.a?'<div class="rate-alias">"'+esc(pp.a)+'"</div>':'')+'</div></div>'
         +'<div class="rate-criteria">'
-        +['atk','def','phy'].map((k,ki)=>{
-          const labels=['Attaque','Défense','Physique'];
-          return '<div class="rate-crit">'
-            +'<span class="rate-crit-label">'+labels[ki]+'</span>'
-            +'<div class="stars" id="stars-'+esc(name)+'-'+k+'">'
-            +[1,2,3,4,5].map(v=>'<span class="star'+(s[k]>=v?' on':'')+'" onclick="setStar(\''+esc(name)+'\',\''+k+'\','+v+')">★</span>').join('')
-            +'</div>'
-            +'</div>';
-        }).join('')
-        +'</div>'
-        +'</div>';
+        +[{k:'atk',l:'Attaque'},{k:'def',l:'Défense'},{k:'phy',l:'Physique'}].map(({k,l})=>
+          '<div class="rate-crit"><span class="rate-crit-label">'+l+'</span>'
+          +'<div class="stars" id="stars-'+name.replace(/[^a-zA-Z0-9]/g,'_')+'-'+k+'">'
+          +[1,2,3,4,5].map(v=>'<span class="star'+(s[k]>=v?' on':'')+'" onclick="setStar(\''+name.replace(/'/g,"\\'")+"','"+k+"',"+v+')">★</span>').join('')
+          +'</div></div>'
+        ).join('')
+        +'</div></div>';
     });
 
-    html+='<button class="btn btn-go" style="margin-top:8px" onclick="submitRatings('+matchId+',\''+esc(joueurName)+'\')">Envoyer mes notes</button>';
-    html+='<p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px;padding-bottom:24px">Tes notes sont anonymes. Elles influencent progressivement les scores des joueurs.</p>';
-
+    html+='<button class="btn btn-go" style="margin-top:8px" onclick="submitRatings('+matchId+',\''+joueurName.replace(/'/g,"\\'")+'\')">Envoyer mes notes</button>';
+    html+='<p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px;padding-bottom:32px">Anonyme · Influence progressivement les scores</p>';
     el.innerHTML=html;
-  }catch(e){el.innerHTML='<p style="color:var(--red);text-align:center;padding:40px 16px">Erreur de chargement. Vérifie ta connexion.</p>';}
+  }catch(e){el.innerHTML='<p style="color:var(--red);text-align:center;padding:40px">Erreur. Réessaie.</p>';}
 }
 
 function setStar(name,crit,val){
@@ -1305,7 +1373,6 @@ async function init() {
   // Détecter si c'est un lien de notation
   const params=new URLSearchParams(location.search);
   const matchId=params.get('match');
-  const joueurName=params.get('joueur');
 
   setSyncDot('loading');
   try{
@@ -1319,9 +1386,9 @@ async function init() {
     setSyncDot('ok');
     document.getElementById('loading-screen').style.display='none';
 
-    if(matchId&&joueurName){
-      // Mode notation — afficher directement la page de notation
-      await initRatingPage(parseInt(matchId),decodeURIComponent(joueurName));
+    if(matchId){
+      // Mode notation — le joueur choisit son nom sur la page
+      await initRatingPage(parseInt(matchId));
     } else {
       render();
     }
