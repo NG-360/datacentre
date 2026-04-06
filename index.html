@@ -780,6 +780,9 @@ async function deleteMatch(id){
   }catch(e){setSyncDot('err');showToast('Erreur',true);}
 }
 
+// Map pour stocker les textes WhatsApp sans les mettre dans les attributs onclick
+const WA_TEXTS = {};
+
 function renderResults(){
   buildTeamSelects();
   const h=document.getElementById('match-history');
@@ -788,9 +791,9 @@ function renderResults(){
     const w=m.score_a>m.score_b?'A':m.score_a<m.score_b?'B':'Nul';
     const d=new Date(m.date).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
     const tA=m.team_a||[];const tB=m.team_b||[];
-    // Un seul lien par match — le joueur choisit son nom sur place
     const ratingUrl=location.origin+location.pathname+'?match='+m.id;
-    const waTxt='⭐ NOTEZ LES JOUEURS !\nMatch du '+d+' ('+m.score_a+'-'+m.score_b+')\n\nOuvrez ce lien et notez vos coéquipiers (2 min) :\n'+ratingUrl;
+    // Stocker le texte WA dans la map pour éviter les problèmes d'échappement HTML
+    WA_TEXTS[m.id]='⭐ NOTEZ LES JOUEURS !\nMatch du '+d+' ('+m.score_a+'-'+m.score_b+')\n\nOuvrez ce lien et notez vos coéquipiers (2 min) :\n'+ratingUrl;
     return '<div class="match-entry">'
       +'<div class="match-date">'+d+'</div>'
       +'<div class="match-score" style="color:'+(w==='A'?'var(--red)':w==='B'?'var(--blue)':'var(--muted)')+'">'+m.score_a+' — '+m.score_b+'</div>'
@@ -798,8 +801,8 @@ function renderResults(){
       +'<div class="match-vs">VS</div>'
       +'<div style="text-align:right"><div class="match-team-name mt-b">Éq. B'+(w==='B'?' ✓':'')+'</div><div class="match-players">'+tB.join(', ')+'</div></div></div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px">'
-      +'<button onclick="copyWArating(\''+ratingUrl.replace(/'/g,"\\'")+'\',' +JSON.stringify(waTxt)+')" style="padding:9px;background:rgba(0,96,169,0.07);border:1px solid rgba(0,96,169,0.25);border-radius:8px;font-size:12px;font-weight:600;color:var(--blue);cursor:pointer;font-family:\'DM Sans\',sans-serif">Envoyer notation</button>'
-      +'<button onclick="showRatingProgress('+m.id+',this)" style="padding:9px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;font-family:\'DM Sans\',sans-serif">Avancement</button>'
+      +'<button onclick="copyWArating('+m.id+')" style="padding:9px;background:rgba(0,96,169,0.07);border:1px solid rgba(0,96,169,0.25);border-radius:8px;font-size:12px;font-weight:600;color:var(--blue);cursor:pointer;font-family:\'DM Sans\',sans-serif">Envoyer notation</button>'
+      +'<button onclick="showRatingProgress('+m.id+')" style="padding:9px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;font-family:\'DM Sans\',sans-serif">Avancement</button>'
       +'</div>'
       +'<div id="progress-'+m.id+'" style="margin-top:8px"></div>'
       +'<button onclick="deleteMatch('+m.id+')" style="margin-top:6px;width:100%;padding:8px;background:transparent;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted);cursor:pointer;font-family:\'DM Sans\',sans-serif">Supprimer</button>'
@@ -807,7 +810,9 @@ function renderResults(){
   }).join('');
 }
 
-function copyWArating(url, txt){
+function copyWArating(matchId){
+  const txt = WA_TEXTS[matchId];
+  if(!txt) return;
   navigator.clipboard.writeText(txt).then(()=>showToast('Message copié pour WhatsApp !'));
 }
 
@@ -1288,11 +1293,9 @@ async function startRating(matchId, joueurName){
     const toRate=allPlayers.filter(n=>n!==joueurName);
     const d=new Date(match.date).toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
 
-    // Vérifier notes existantes
+    // Vérifier si ce joueur a DÉJÀ noté ce match
     const existing=await dbGet('ratings','match_id=eq.'+matchId+'&rater_name=eq.'+encodeURIComponent(joueurName));
-    ratingScores={};
-    toRate.forEach(n=>{ratingScores[n]={atk:0,def:0,phy:0};});
-    existing.forEach(r=>{if(ratingScores[r.rated_name])ratingScores[r.rated_name]={atk:r.atk||0,def:r.def||0,phy:r.phy||0};});
+    const alreadyVoted = existing.length > 0;
 
     const raterP=PLAYERS.find(p=>p.n===joueurName);
     let html=''
@@ -1302,34 +1305,49 @@ async function startRating(matchId, joueurName){
       +'<div style="font-size:12px;color:var(--muted)">Match du '+d+'</div></div>'
       +'</div>';
 
-    if(existing.length) html+='<div class="rate-already">Tu as déjà noté ce match — tu peux modifier.</div>';
-    html+='<div class="info-box" style="margin-bottom:14px">Note chaque joueur sur 3 critères (1 à 5 étoiles). Anonyme pour tous.</div>';
+    // Si déjà voté — page verrouillée
+    if(alreadyVoted){
+      html+='<div style="text-align:center;padding:40px 16px">'
+        +'<div style="font-size:52px;margin-bottom:16px">✅</div>'
+        +'<div style="font-family:\'Syne\',sans-serif;font-weight:800;font-size:20px;margin-bottom:8px">Tu as déjà noté ce match</div>'
+        +'<div style="font-size:14px;color:var(--muted);line-height:1.6">Tes notes ont bien été enregistrées.<br>Elles sont anonymes pour tes coéquipiers.</div>'
+        +'</div>';
+      el.innerHTML=html;
+      return;
+    }
+
+    // Pas encore voté — afficher le formulaire vierge
+    ratingScores={};
+    toRate.forEach(n=>{ratingScores[n]={atk:0,def:0,phy:0};});
+
+    html+='<div class="info-box" style="margin-bottom:14px">Note chaque joueur sur 3 critères (1 à 5 ★). Anonyme pour tous.</div>';
 
     toRate.forEach(name=>{
       const pp=PLAYERS.find(x=>x.n===name);
       const s=ratingScores[name];
-      html+='<div class="rate-card" id="rcard-'+name.replace(/[^a-zA-Z0-9]/g,'_')+'">'
+      const safeId=name.replace(/[^a-zA-Z0-9]/g,'_');
+      html+='<div class="rate-card" id="rcard-'+safeId+'">'
         +'<div class="rate-card-header"><div class="rate-avatar">'+(pp?.e||'⚽')+'</div>'
         +'<div><div class="rate-name">'+esc(name)+'</div>'+(pp?.a?'<div class="rate-alias">"'+esc(pp.a)+'"</div>':'')+'</div></div>'
         +'<div class="rate-criteria">'
         +[{k:'atk',l:'Attaque'},{k:'def',l:'Défense'},{k:'phy',l:'Physique'}].map(({k,l})=>
           '<div class="rate-crit"><span class="rate-crit-label">'+l+'</span>'
-          +'<div class="stars" id="stars-'+name.replace(/[^a-zA-Z0-9]/g,'_')+'-'+k+'">'
-          +[1,2,3,4,5].map(v=>'<span class="star'+(s[k]>=v?' on':'')+'" onclick="setStar(\''+name.replace(/'/g,"\\'")+"','"+k+"',"+v+')">★</span>').join('')
+          +'<div class="stars" id="stars-'+safeId+'-'+k+'">'
+          +[1,2,3,4,5].map(v=>'<span class="star" onclick="setStar(\''+safeId+'\',\''+k+'\',\''+name.replace(/'/g,"\\'")+'\','+v+')">★</span>').join('')
           +'</div></div>'
         ).join('')
         +'</div></div>';
     });
 
     html+='<button class="btn btn-go" style="margin-top:8px" onclick="submitRatings('+matchId+',\''+joueurName.replace(/'/g,"\\'")+'\')">Envoyer mes notes</button>';
-    html+='<p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px;padding-bottom:32px">Anonyme · Influence progressivement les scores</p>';
+    html+='<p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px;padding-bottom:32px">Anonyme · Non modifiable après envoi</p>';
     el.innerHTML=html;
   }catch(e){el.innerHTML='<p style="color:var(--red);text-align:center;padding:40px">Erreur. Réessaie.</p>';}
 }
 
-function setStar(name,crit,val){
-  ratingScores[name][crit]=val;
-  const container=document.getElementById('stars-'+name+'-'+crit);
+function setStar(safeId, crit, realName, val){
+  ratingScores[realName][crit]=val;
+  const container=document.getElementById('stars-'+safeId+'-'+crit);
   if(!container)return;
   container.querySelectorAll('.star').forEach((s,i)=>{
     s.classList.toggle('on',i<val);
