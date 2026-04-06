@@ -60,16 +60,96 @@ main{padding:16px;max-width:520px;margin:0 auto}
 .counter{font-size:13px;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:6px}
 .counter-num{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:var(--red);line-height:1}
 
-.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px;margin-bottom:4px}
-.pc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 8px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden;user-select:none}
-.pc:active{transform:scale(0.95)}
-.pc.sel{background:#FFF5F6;border-color:var(--red);border-width:1.5px}
-.pc.sel::after{content:'';position:absolute;top:6px;right:6px;width:6px;height:6px;border-radius:50%;background:var(--red)}
-.pc-avatar{font-size:18px;line-height:1;margin-bottom:4px}
-.pname{font-size:13px;font-weight:500;color:var(--text);line-height:1.2}
-.palias{font-size:10px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pbadge{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-top:5px;color:var(--muted)}
-.pc.sel .pbadge{color:var(--red)}
+/* ── Player Cards ── */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-bottom:4px}
+
+.pc{
+  position:relative;overflow:hidden;cursor:pointer;
+  border-radius:14px;padding:0;
+  user-select:none;transition:transform .15s,box-shadow .15s;
+  aspect-ratio:3/4;
+  background:var(--surface);
+  box-shadow:0 2px 8px rgba(0,0,0,0.06);
+}
+.pc:active{transform:scale(0.94)}
+.pc.sel{transform:scale(1.03);box-shadow:0 6px 20px rgba(157,34,53,0.25)}
+.pc.sel::after{content:'✓';position:absolute;top:7px;right:7px;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:18px;text-align:center;z-index:3}
+
+/* Bande de couleur selon niveau */
+.pc-stripe{position:absolute;top:0;left:0;right:0;height:4px;border-radius:14px 14px 0 0}
+.pc-lvl-gold .pc-stripe{background:linear-gradient(90deg,#c8970a,#f5d060,#c8970a)}
+.pc-lvl-silver .pc-stripe{background:linear-gradient(90deg,#7a8a9a,#b8ccd8,#7a8a9a)}
+.pc-lvl-bronze .pc-stripe{background:linear-gradient(90deg,#9a5a2a,#d4956a,#9a5a2a)}
+.pc-lvl-iron .pc-stripe{background:var(--border2)}
+
+/* Rating number en haut à gauche */
+.pc-rating{
+  position:absolute;top:12px;left:10px;
+  font-family:'Syne',sans-serif;font-weight:800;font-size:22px;line-height:1;
+  z-index:2;
+}
+.pc-lvl-gold .pc-rating{color:#b8860a}
+.pc-lvl-silver .pc-rating{color:#5a7080}
+.pc-lvl-bronze .pc-rating{color:#8b4513}
+.pc-lvl-iron .pc-rating{color:var(--muted)}
+
+/* Position badge */
+.pc-pos{
+  position:absolute;top:14px;right:10px;
+  font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  color:var(--muted);z-index:2;font-family:'Syne',sans-serif;
+}
+
+/* Avatar central */
+.pc-ava{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-54%);
+  font-size:36px;line-height:1;z-index:1;
+  transition:transform .15s;
+}
+.pc:active .pc-ava{transform:translate(-50%,-54%) scale(0.92)}
+
+/* Nom en bas */
+.pc-footer{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:28px 8px 8px;
+  background:linear-gradient(to top,rgba(255,255,255,0.97) 60%,transparent);
+  text-align:center;z-index:2;
+}
+.pc-name{font-size:12px;font-weight:700;color:var(--text);font-family:'Syne',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-alias{font-size:9px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Mini stats bar */
+.pc-stats{display:flex;justify-content:center;gap:4px;margin-top:4px}
+.pc-stat{text-align:center}
+.pc-stat-val{font-size:9px;font-weight:700;font-family:'Syne',sans-serif;color:var(--text);line-height:1}
+.pc-stat-lbl{font-size:7px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px}
+
+/* Forme indicator */
+.pc-forme{position:absolute;bottom:8px;right:8px;font-size:11px;z-index:3}
+
+/* Sélection glow */
+.pc.sel .pc-footer{background:linear-gradient(to top,rgba(255,245,246,0.97) 60%,transparent)}
+.pc.sel .pc-name{color:var(--red)}
+
+/* Lien profil */
+.pc-profile-link{
+  position:absolute;top:0;left:0;right:0;bottom:0;z-index:4;
+  display:none;align-items:flex-start;justify-content:flex-end;
+  padding:32px 8px 0;
+}
+.pc:hover .pc-profile-link{display:flex}
+.pc-profile-link span{
+  font-size:9px;color:var(--blue);text-decoration:underline;
+  background:rgba(255,255,255,0.85);border-radius:6px;padding:2px 5px;
+  cursor:pointer;
+}
+
+/* Animation de distribution */
+@keyframes dealIn{
+  from{opacity:0;transform:translateY(-20px) scale(0.85)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+.pc-dealt{animation:dealIn .3s cubic-bezier(.34,1.56,.64,1) both}
 
 .sep{border:none;border-top:1px solid var(--border);margin:18px 0}
 .fld{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--text);font-family:'DM Sans',sans-serif;width:100%}
@@ -563,22 +643,67 @@ function switchPage(page, btn){
 // ══════════════════════════════════════════
 // TIRAGE
 // ══════════════════════════════════════════
-function playerCard(p,isSel,clickFn,showProf){
-  return '<div class="pc'+(isSel?' sel':'')+'" onclick="'+clickFn+'">'
-    +'<div class="pc-avatar">'+(p.e||'⚽')+'</div>'
-    +'<div class="pname">'+esc(p.n)+'</div>'
-    +(p.a?'<div class="palias">'+esc(p.a)+'</div>':'')
-    +'<div class="pbadge">'+avg(p).toFixed(2)+'</div>'
-    +(showProf?'<div onclick="event.stopPropagation();openProfile(\''+p.n.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')" style="font-size:10px;color:var(--blue);margin-top:4px;text-decoration:underline">profil</div>':'')
-    +'</div>';
+
+// Calcule la "forme" du joueur sur ses N derniers matchs
+function playerForm(name, n=5){
+  const myMatches=MATCHES.filter(m=>(m.team_a||[]).includes(name)||(m.team_b||[]).includes(name)).slice(0,n);
+  if(!myMatches.length)return null;
+  let w=0,l=0;
+  myMatches.forEach(m=>{
+    const inA=(m.team_a||[]).includes(name);
+    const res=m.score_a>m.score_b?'A':m.score_a<m.score_b?'B':'D';
+    if(res==='D')return;
+    if((res==='A'&&inA)||(res==='B'&&!inA))w++;else l++;
+  });
+  const wr=myMatches.length>0?w/myMatches.length:0;
+  if(myMatches.length>=3&&w===myMatches.length)return{icon:'🔥',tip:'En feu'};
+  if(wr>=0.6)return{icon:'📈',tip:'En forme'};
+  if(myMatches.length>=3&&l===myMatches.length)return{icon:'❄️',tip:'Mauvaise passe'};
+  if(wr<=0.3&&myMatches.length>=3)return{icon:'📉',tip:'Forme basse'};
+  return{icon:'➡️',tip:'Stable'};
+}
+
+// Niveau FIFA-style selon la note
+function playerLevel(score){
+  if(score>=4.3)return{cls:'pc-lvl-gold',  pos:'ORE'};
+  if(score>=3.8)return{cls:'pc-lvl-silver',pos:'ARG'};
+  if(score>=3.2)return{cls:'pc-lvl-bronze',pos:'BRZ'};
+  return             {cls:'pc-lvl-iron',   pos:'FER'};
+}
+
+function playerCard(p, isSel, clickFn, showProf, dealDelay=0){
+  const score=avg(p);
+  const lvl=playerLevel(score);
+  const forme=playerForm(p.n);
+  const safeName=p.n.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  const delayStyle=dealDelay>0?`animation-delay:${dealDelay}ms`:'';
+  const miniStats=[
+    {l:'ATK',v:p.atk},
+    {l:'DEF',v:p.def},
+    {l:'PHY',v:p.phy},
+  ].map(s=>`<div class="pc-stat"><div class="pc-stat-val">${s.v.toFixed(1)}</div><div class="pc-stat-lbl">${s.l}</div></div>`).join('');
+
+  return `<div class="pc ${lvl.cls}${isSel?' sel':''} pc-dealt" style="${delayStyle}" onclick="${clickFn}">
+    <div class="pc-stripe"></div>
+    <div class="pc-rating">${(Math.round(score*10)/10).toFixed(1)}</div>
+    <div class="pc-pos">${lvl.pos}</div>
+    <div class="pc-ava">${p.e||'⚽'}</div>
+    ${forme?`<div class="pc-forme" title="${forme.tip}">${forme.icon}</div>`:''}
+    <div class="pc-footer">
+      <div class="pc-name">${esc(p.n)}</div>
+      ${p.a?`<div class="pc-alias">${esc(p.a)}</div>`:''}
+      <div class="pc-stats">${miniStats}</div>
+    </div>
+    ${showProf?`<div class="pc-profile-link"><span onclick="event.stopPropagation();openProfile('${safeName}')">profil</span></div>`:''}
+  </div>`;
 }
 
 function render(){
   const all=[...PLAYERS,...guests];
-  document.getElementById('pgrid').innerHTML=all.map(p=>{
+  document.getElementById('pgrid').innerHTML=all.map((p,i)=>{
     const s=sel.has(p.n);
     const fn='tog(\''+p.n.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')';
-    return playerCard(p,s,fn,true);
+    return playerCard(p,s,fn,true,i*30);
   }).join('');
   document.getElementById('cnt').textContent=sel.size;
   document.getElementById('gobtn').disabled=sel.size!==10;
