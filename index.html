@@ -131,25 +131,19 @@ main{padding:16px;max-width:520px;margin:0 auto}
 .pc.sel .pc-footer{background:linear-gradient(to top,rgba(255,245,246,0.97) 60%,transparent)}
 .pc.sel .pc-name{color:var(--red)}
 
-/* Lien profil */
+/* Lien profil — tap long sur mobile */
 .pc-profile-link{
   position:absolute;top:0;left:0;right:0;bottom:0;z-index:4;
   display:none;align-items:flex-start;justify-content:flex-end;
   padding:32px 8px 0;
 }
-.pc:hover .pc-profile-link{display:flex}
 .pc-profile-link span{
   font-size:9px;color:var(--blue);text-decoration:underline;
   background:rgba(255,255,255,0.85);border-radius:6px;padding:2px 5px;
   cursor:pointer;
 }
-
-/* Animation de distribution */
-@keyframes dealIn{
-  from{opacity:0;transform:translateY(-20px) scale(0.85)}
-  to{opacity:1;transform:translateY(0) scale(1)}
-}
-.pc-dealt{animation:dealIn .3s cubic-bezier(.34,1.56,.64,1) both}
+.pc.longpress-active .pc-profile-link{display:flex}
+@media(hover:hover){.pc:hover .pc-profile-link{display:flex}}
 
 .sep{border:none;border-top:1px solid var(--border);margin:18px 0}
 .fld{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--text);font-family:'DM Sans',sans-serif;width:100%}
@@ -302,8 +296,48 @@ main{padding:16px;max-width:520px;margin:0 auto}
 .loading-spinner{width:32px;height:32px;border:3px solid var(--surface2);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* Mode nuit */
+body.dark{
+  --bg:#111118;--surface:#1A1A24;--surface2:#24242F;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.16);
+  --text:#F0EFF8;--muted:#6B6D8A;
+  --white:#1A1A24;--black:#F0EFF8;
+}
+body.dark .pc-lvl-gold .pc-footer{background:linear-gradient(to top,rgba(26,26,36,0.97) 60%,transparent)}
+body.dark .pc-lvl-silver .pc-footer{background:linear-gradient(to top,rgba(26,26,36,0.97) 60%,transparent)}
+body.dark .pc-lvl-bronze .pc-footer{background:linear-gradient(to top,rgba(26,26,36,0.97) 60%,transparent)}
+body.dark .pc-lvl-iron .pc-footer{background:linear-gradient(to top,rgba(26,26,36,0.97) 60%,transparent)}
+body.dark .pc.sel .pc-footer{background:linear-gradient(to top,rgba(40,20,24,0.97) 60%,transparent)}
+body.dark header{background:var(--red)}
+body.dark .drawer{background:#1A1A24}
+body.dark .loading-screen{background:#111118}
+body.dark .info-box{background:rgba(0,96,169,0.15);color:#7ab8f5;border-color:rgba(0,96,169,0.3)}
+body.dark .warn-box{background:rgba(160,92,0,0.15);color:#f5c47a;border-color:rgba(160,92,0,0.3)}
+body.dark .rate-already{background:rgba(26,122,74,0.15);color:#7af5b5;border-color:rgba(26,122,74,0.3)}
+body.dark .profile-stat{background:var(--surface2)}
+
+/* Compteur sticky */
+.counter-bar{
+  position:sticky;top:56px;z-index:9;
+  background:var(--bg);padding:8px 16px 6px;
+  margin:0 -16px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+}
+.counter-bar-num{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--red);line-height:1}
+.counter-bar-label{font-size:13px;color:var(--muted)}
+.counter-bar-pips{display:flex;gap:4px;margin-left:auto}
+.counter-pip{width:10px;height:10px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);transition:background .2s}
+.counter-pip.on{background:var(--red);border-color:var(--red)}
+
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--black);color:var(--white);font-family:'Syne',sans-serif;font-weight:700;font-size:13px;padding:10px 20px;border-radius:20px;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;z-index:999}
 .toast.show{opacity:1}
+
+/* Admin tabs */
+.admin-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px}
+.admin-tab{flex:1;padding:11px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.5px;background:none;border:none;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s}
+.admin-tab.active{color:var(--red);border-bottom-color:var(--red)}
+.admin-pane{display:none}.admin-pane.active{display:block}
 </style>
 </head>
 <body>
@@ -349,8 +383,13 @@ main{padding:16px;max-width:520px;margin:0 auto}
     </button>
     <div class="drawer-sep"></div>
     <button class="drawer-item" id="nav-admin" onclick="switchPage('admin',this)">
-      <span class="drawer-item-icon">🗂️</span>
-      <span class="drawer-item-label">Annuaire</span>
+      <span class="drawer-item-icon">🔐</span>
+      <span class="drawer-item-label">Admin</span>
+    </button>
+    <div class="drawer-sep"></div>
+    <button class="drawer-item" onclick="toggleDark();closeDrawer()">
+      <span class="drawer-item-icon" id="dark-icon">🌙</span>
+      <span class="drawer-item-label" id="dark-label">Mode nuit</span>
     </button>
   </nav>
 </div>
@@ -359,8 +398,12 @@ main{padding:16px;max-width:520px;margin:0 auto}
 
 <!-- ═══ TIRAGE ═══ -->
 <div class="page active" id="page-tirage">
-  <div class="section-title">Joueurs présents</div>
-  <div class="counter"><div class="counter-num" id="cnt">0</div><span style="color:var(--muted);font-size:13px">/ 10 sélectionnés</span></div>
+  <div class="counter-bar" id="counter-bar">
+    <div class="counter-bar-num" id="cnt">0</div>
+    <div class="counter-bar-label">/ 10 joueurs</div>
+    <div class="counter-bar-pips" id="counter-pips"></div>
+  </div>
+  <div style="height:8px"></div>
   <div class="pgrid" id="pgrid"></div>
   <hr class="sep">
   <div class="section-title">Ajouter un invité</div>
@@ -434,46 +477,69 @@ main{padding:16px;max-width:520px;margin:0 auto}
   <div id="duo-list"></div>
 </div>
 
-<!-- ═══ ANNUAIRE ═══ -->
+<!-- ═══ ADMIN ═══ -->
 <div class="page" id="page-admin">
-  <div class="section-title" style="margin-top:8px">Annuaire joueurs</div>
+  <div class="section-title" style="margin-top:8px">Administration</div>
   <div id="admin-unlock-form" style="margin-bottom:14px">
-    <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Accès protégé. Les modifications sont sauvegardées pour tout le groupe.</p>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Accès protégé. Les modifications sont partagées avec tout le groupe.</p>
     <input id="admin-pwd" type="password" class="fld" placeholder="Mot de passe..." style="margin-bottom:8px">
     <button class="btn btn-go" style="margin-top:0" onclick="unlockAdmin()">Déverrouiller</button>
   </div>
   <div id="admin-content" style="display:none">
-    <div class="add-form">
-      <h3>Ajouter un joueur</h3>
-      <div class="add-form-fields">
-        <input id="new-name" type="text" class="fld" placeholder="Prénom...">
-        <input id="new-alias" type="text" class="fld" placeholder="Alias...">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:24px;min-width:36px;text-align:center" id="new-emoji-preview">⚽</span>
-          <input id="new-emoji" type="text" class="fld" placeholder="Emoji avatar" maxlength="4" style="flex:1">
+
+    <!-- Onglets -->
+    <div class="admin-tabs">
+      <button class="admin-tab active" id="atab-joueurs" onclick="switchAdminTab('joueurs')">Joueurs</button>
+      <button class="admin-tab" id="atab-notations" onclick="switchAdminTab('notations')">Notations</button>
+      <button class="admin-tab" id="atab-data" onclick="switchAdminTab('data')">Données</button>
+    </div>
+
+    <!-- Onglet Joueurs -->
+    <div class="admin-pane active" id="apane-joueurs">
+      <div class="add-form">
+        <h3>Ajouter un joueur</h3>
+        <div class="add-form-fields">
+          <input id="new-name" type="text" class="fld" placeholder="Prénom...">
+          <input id="new-alias" type="text" class="fld" placeholder="Alias...">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:24px;min-width:36px;text-align:center" id="new-emoji-preview">⚽</span>
+            <input id="new-emoji" type="text" class="fld" placeholder="Emoji avatar" maxlength="4" style="flex:1">
+          </div>
+          <div class="emoji-grid" id="new-emoji-grid"></div>
+          <div class="scores-grid">
+            <div class="score-field"><span class="score-label">Attaque</span><input type="number" class="score-input" id="new-atk" min="1" max="5" step="0.01" placeholder="3.5"></div>
+            <div class="score-field"><span class="score-label">Défense</span><input type="number" class="score-input" id="new-def" min="1" max="5" step="0.01" placeholder="3.5"></div>
+            <div class="score-field"><span class="score-label">Physique</span><input type="number" class="score-input" id="new-phy" min="1" max="5" step="0.01" placeholder="3.5"></div>
+            <div class="score-field"><span class="score-label">Technique</span><input type="number" class="score-input" id="new-tec" min="1" max="5" step="0.01" placeholder="3.5"></div>
+            <div class="score-field"><span class="score-label">Mental</span><input type="number" class="score-input" id="new-men" min="1" max="5" step="0.01" placeholder="3.5"></div>
+          </div>
+          <button class="btn btn-go" style="margin:0;padding:12px" onclick="addPlayer()">Ajouter</button>
         </div>
-        <div class="emoji-grid" id="new-emoji-grid"></div>
-        <div class="scores-grid">
-          <div class="score-field"><span class="score-label">Attaque</span><input type="number" class="score-input" id="new-atk" min="1" max="5" step="0.01" placeholder="3.5"></div>
-          <div class="score-field"><span class="score-label">Défense</span><input type="number" class="score-input" id="new-def" min="1" max="5" step="0.01" placeholder="3.5"></div>
-          <div class="score-field"><span class="score-label">Physique</span><input type="number" class="score-input" id="new-phy" min="1" max="5" step="0.01" placeholder="3.5"></div>
-          <div class="score-field"><span class="score-label">Technique</span><input type="number" class="score-input" id="new-tec" min="1" max="5" step="0.01" placeholder="3.5"></div>
-          <div class="score-field"><span class="score-label">Mental</span><input type="number" class="score-input" id="new-men" min="1" max="5" step="0.01" placeholder="3.5"></div>
-        </div>
-        <button class="btn btn-go" style="margin:0;padding:12px" onclick="addPlayer()">Ajouter</button>
       </div>
+      <input type="text" class="admin-search" id="admin-search" placeholder="Rechercher un joueur..." oninput="renderAdmin(this.value)">
+      <div id="admin-list"></div>
     </div>
-    <input type="text" class="admin-search" id="admin-search" placeholder="Rechercher..." oninput="renderAdmin(this.value)">
-    <div id="admin-list"></div>
-    <hr class="sep">
-    <div class="section-title">Sauvegarde</div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Les données sont sur Supabase, partagées avec tout le groupe. Export JSON en backup.</p>
-    <div class="admin-actions">
-      <button class="btn btn-secondary" onclick="exportData()">Exporter JSON</button>
-      <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">Importer JSON</button>
+
+    <!-- Onglet Notations -->
+    <div class="admin-pane" id="apane-notations">
+      <div class="info-box">Notations reçues après chaque match. Clique sur un match pour voir le détail et appliquer les notes.</div>
+      <div id="admin-ratings-list"></div>
     </div>
-    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
-    <button class="btn btn-danger" style="margin-top:8px" onclick="resetToDefault()">Réinitialiser les données</button>
+
+    <!-- Onglet Données -->
+    <div class="admin-pane" id="apane-data">
+      <div class="section-title" style="margin-top:0">Sauvegarde</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Les données sont sur Supabase et partagées avec tout le groupe. Exporte un JSON en backup de sécurité.</p>
+      <div class="admin-actions">
+        <button class="btn btn-secondary" onclick="exportData()">Exporter JSON</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">Importer JSON</button>
+      </div>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+      <hr class="sep">
+      <div class="section-title">Zone danger</div>
+      <button class="btn btn-danger" onclick="resetToDefault()">Réinitialiser toutes les données</button>
+    </div>
+
   </div>
 </div>
 
@@ -615,8 +681,93 @@ async function reloadMatches() {
 }
 
 // ══════════════════════════════════════════
-// NAVIGATION — BURGER DRAWER
+// DARK MODE
 // ══════════════════════════════════════════
+function toggleDark(){
+  const dark=document.body.classList.toggle('dark');
+  localStorage.setItem('dc_dark', dark?'1':'0');
+  document.getElementById('dark-icon').textContent=dark?'☀️':'🌙';
+  document.getElementById('dark-label').textContent=dark?'Mode jour':'Mode nuit';
+}
+function initDark(){
+  if(localStorage.getItem('dc_dark')==='1'){
+    document.body.classList.add('dark');
+    document.getElementById('dark-icon').textContent='☀️';
+    document.getElementById('dark-label').textContent='Mode jour';
+  }
+}
+
+// ══════════════════════════════════════════
+// TAP LONG → PROFIL
+// ══════════════════════════════════════════
+let _lpTimer=null;
+function setupLongPress(el, onLong, onShort){
+  el.addEventListener('touchstart',e=>{
+    _lpTimer=setTimeout(()=>{_lpTimer=null;onLong();},500);
+  },{passive:true});
+  el.addEventListener('touchend',e=>{
+    if(_lpTimer){clearTimeout(_lpTimer);_lpTimer=null;onShort();}
+  });
+  el.addEventListener('touchmove',()=>{if(_lpTimer){clearTimeout(_lpTimer);_lpTimer=null;}},{passive:true});
+}
+
+// ══════════════════════════════════════════
+// COMPTEUR PIPS
+// ══════════════════════════════════════════
+function updatePips(count){
+  const pips=document.getElementById('counter-pips');
+  if(!pips)return;
+  pips.innerHTML=Array.from({length:10},(_,i)=>`<div class="counter-pip${i<count?' on':''}"></div>`).join('');
+  document.getElementById('cnt').textContent=count;
+}
+
+// ══════════════════════════════════════════
+// ADMIN TABS
+// ══════════════════════════════════════════
+function switchAdminTab(tab){
+  document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.admin-pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('atab-'+tab).classList.add('active');
+  document.getElementById('apane-'+tab).classList.add('active');
+  if(tab==='notations') renderAdminRatings();
+}
+
+async function renderAdminRatings(){
+  const el=document.getElementById('admin-ratings-list');
+  el.innerHTML='<p style="font-size:13px;color:var(--muted);text-align:center;padding:16px">Chargement...</p>';
+  try{
+    if(!MATCHES.length){el.innerHTML='<p style="font-size:13px;color:var(--muted);text-align:center;padding:16px">Aucun match enregistré.</p>';return;}
+    // Pour chaque match, compter les votants
+    const allRatings=await dbGet('ratings','select=match_id,rater_name');
+    // Grouper par match_id
+    const byMatch={};
+    allRatings.forEach(r=>{
+      if(!byMatch[r.match_id])byMatch[r.match_id]=new Set();
+      byMatch[r.match_id].add(r.rater_name);
+    });
+    el.innerHTML=MATCHES.map(m=>{
+      const d=new Date(m.date).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+      const voters=byMatch[m.id]?[...byMatch[m.id]]:[];
+      const total=(m.team_a||[]).length+(m.team_b||[]).length;
+      const pct=total>0?Math.round(voters.length/total*100):0;
+      const allPlayers=[...(m.team_a||[]),...(m.team_b||[])];
+      const missing=allPlayers.filter(n=>!voters.includes(n));
+      return '<div class="match-entry">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+        +'<div><div style="font-size:13px;font-weight:500">'+d+'</div>'
+        +'<div style="font-size:11px;color:var(--muted)">'+m.score_a+' — '+m.score_b+'</div></div>'
+        +'<div style="text-align:right"><div style="font-family:\'Syne\',sans-serif;font-weight:800;font-size:18px;color:var(--red)">'+voters.length+'/'+total+'</div>'
+        +'<div style="font-size:10px;color:var(--muted)">ont voté</div></div>'
+        +'</div>'
+        +'<div class="rate-progress-bar"><div class="rate-progress-fill" style="width:'+pct+'%"></div></div>'
+        +(missing.length?'<div style="font-size:11px;color:var(--muted);margin-top:6px">En attente : '+missing.join(', ')+'</div>':'<div style="font-size:11px;color:#1a7a4a;margin-top:6px">✓ Tout le monde a voté</div>')
+        +(voters.length>=2?'<button onclick="applyRatings('+m.id+')" style="margin-top:10px;width:100%;padding:9px;background:var(--red);border:none;border-radius:8px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Syne\',sans-serif">Appliquer les notes ('+voters.length+' votes)</button>':'')
+        +'</div>';
+    }).join('');
+  }catch(e){el.innerHTML='<p style="font-size:13px;color:var(--red);text-align:center;padding:16px">Erreur chargement</p>';}
+}
+
+// ── Navigation ──
 function openDrawer(){
   document.getElementById('drawer').classList.add('open');
   document.getElementById('drawer-overlay').classList.add('open');
@@ -700,13 +851,23 @@ function playerCard(p, isSel, clickFn, showProf, dealDelay=0){
 
 function render(){
   const all=[...PLAYERS,...guests];
-  document.getElementById('pgrid').innerHTML=all.map((p,i)=>{
+  document.getElementById('pgrid').innerHTML=all.map(p=>{
     const s=sel.has(p.n);
     const fn='tog(\''+p.n.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')';
-    return playerCard(p,s,fn,true,i*30);
+    return playerCard(p,s,fn,true,0);
   }).join('');
-  document.getElementById('cnt').textContent=sel.size;
+  updatePips(sel.size);
   document.getElementById('gobtn').disabled=sel.size!==10;
+  // Tap long sur mobile → ouvrir profil
+  document.querySelectorAll('.pgrid .pc').forEach((el,i)=>{
+    const p=all[i];
+    if(!p)return;
+    const name=p.n;
+    setupLongPress(el,
+      ()=>openProfile(name),
+      ()=>tog(name)
+    );
+  });
 }
 
 function tog(n){
@@ -1530,9 +1691,9 @@ async function init() {
     document.getElementById('loading-screen').style.display='none';
 
     if(matchId){
-      // Mode notation — le joueur choisit son nom sur la page
       await initRatingPage(parseInt(matchId));
     } else {
+      initDark();
       render();
     }
   }catch(err){
