@@ -725,41 +725,6 @@ function initDark(){
 }
 
 // ══════════════════════════════════════════
-// TAP LONG → PROFIL
-// ══════════════════════════════════════════
-let _lpTimer=null;
-let _lpFired=false; // true si le long press a déjà agi
-
-function setupLongPress(el, onLong, onShort){
-  el.addEventListener('touchstart',e=>{
-    _lpFired=false;
-    _lpTimer=setTimeout(()=>{
-      _lpFired=true;
-      _lpTimer=null;
-      onLong();
-    },500);
-  },{passive:true});
-
-  el.addEventListener('touchend',e=>{
-    if(_lpTimer){
-      clearTimeout(_lpTimer);
-      _lpTimer=null;
-      if(!_lpFired) onShort();
-    }
-  });
-
-  el.addEventListener('touchmove',()=>{
-    if(_lpTimer){clearTimeout(_lpTimer);_lpTimer=null;}
-  },{passive:true});
-
-  // Sur mobile, le click natif se déclenche après touchend
-  // On le bloque si le long press a agi
-  el.addEventListener('click',e=>{
-    if(_lpFired){e.stopPropagation();e.preventDefault();}
-  });
-}
-
-// ══════════════════════════════════════════
 // COMPTEUR PIPS
 // ══════════════════════════════════════════
 function updatePips(count){
@@ -870,7 +835,7 @@ function playerLevel(score){
   return             {cls:'pc-lvl-iron',   pos:'FER'};
 }
 
-function playerCard(p, isSel, clickFn, showProf){
+function playerCard(p, isSel, showProf){
   const score=avg(p);
   const lvl=playerLevel(score);
   const forme=playerForm(p.n);
@@ -881,8 +846,8 @@ function playerCard(p, isSel, clickFn, showProf){
     {l:'PHY',v:p.phy},
   ].map(s=>`<div class="pc-stat"><div class="pc-stat-val">${s.v.toFixed(1)}</div><div class="pc-stat-lbl">${s.l}</div></div>`).join('');
 
-  // Pas d'onclick ici — géré par setupLongPress dans render()
-  return `<div class="pc ${lvl.cls}${isSel?' sel':''}">
+  // onclick simple dans le HTML — méthode la plus fiable sur mobile
+  return `<div class="pc ${lvl.cls}${isSel?' sel':''}" onclick="tog('${safeName}')">
     <div class="pc-stripe"></div>
     <div class="pc-rating">${(Math.round(score*10)/10).toFixed(1)}</div>
     <div class="pc-pos">${lvl.pos}</div>
@@ -892,8 +857,8 @@ function playerCard(p, isSel, clickFn, showProf){
       <div class="pc-name">${esc(p.n)}</div>
       ${p.a?`<div class="pc-alias">${esc(p.a)}</div>`:''}
       <div class="pc-stats">${miniStats}</div>
+      ${showProf?`<div onclick="event.stopPropagation();openProfile('${safeName}')" style="font-size:10px;color:var(--blue);margin-top:4px;text-decoration:underline;cursor:pointer">profil</div>`:''}
     </div>
-    ${showProf?`<div class="pc-profile-link"><span onclick="event.stopPropagation();openProfile('${safeName}')">profil</span></div>`:''}
   </div>`;
 }
 
@@ -901,20 +866,10 @@ function render(){
   const all=[...PLAYERS,...guests];
   document.getElementById('pgrid').innerHTML=all.map(p=>{
     const s=sel.has(p.n);
-    return playerCard(p,s,'',true);
+    return playerCard(p,s,true);
   }).join('');
   updatePips(sel.size);
   document.getElementById('gobtn').disabled=sel.size!==10;
-
-  // Attacher les événements après rendu
-  document.querySelectorAll('.pgrid .pc').forEach((el,i)=>{
-    const p=all[i];
-    if(!p) return;
-    // Desktop : click simple
-    el.addEventListener('click', ()=>tog(p.n));
-    // Mobile : tap court = sélection, tap long = profil
-    setupLongPress(el, ()=>openProfile(p.n), ()=>tog(p.n));
-  });
 }
 
 function tog(n){
@@ -1000,8 +955,18 @@ function renderMPool(){
   const used=new Set([...mA.map(p=>p.n),...mB.map(p=>p.n)]);
   const pool=PLAYERS.filter(p=>!used.has(p.n));
   document.getElementById('m-pool').innerHTML=pool.map(p=>{
-    const fn='mAddPlayer(\''+p.n.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')';
-    return playerCard(p,false,fn,false);
+    const score=avg(p);
+    const lvl=playerLevel(score);
+    const safeName=p.n.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<div class="pc ${lvl.cls}" onclick="mAddPlayer('${safeName}')">
+      <div class="pc-stripe"></div>
+      <div class="pc-rating">${(Math.round(score*10)/10).toFixed(1)}</div>
+      <div class="pc-ava">${p.e||'⚽'}</div>
+      <div class="pc-footer">
+        <div class="pc-name">${esc(p.n)}</div>
+        ${p.a?`<div class="pc-alias">${esc(p.a)}</div>`:''}
+      </div>
+    </div>`;
   }).join('')||'<p class="m-empty" style="padding:8px">Tous les joueurs sont placés.</p>';
 }
 function renderMTeams(){
