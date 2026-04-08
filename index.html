@@ -333,7 +333,25 @@ body.dark .profile-stat{background:var(--surface2)}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--black);color:var(--white);font-family:'Syne',sans-serif;font-weight:700;font-size:13px;padding:10px 20px;border-radius:20px;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;z-index:999}
 .toast.show{opacity:1}
 
-/* Admin tabs */
+/* Dashboard */
+.dash-hero{background:var(--red);border-radius:var(--radius);padding:20px;margin-bottom:12px;color:#fff}
+.dash-hero-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;opacity:0.7;margin-bottom:4px}
+.dash-hero-val{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;line-height:1}
+.dash-hero-sub{font-size:12px;opacity:0.7;margin-top:4px}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.dash-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.dash-card-label{font-size:10px;font-family:'Syne',sans-serif;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.dash-card-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--text);line-height:1}
+.dash-card-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.dash-streak{display:flex;gap:4px;margin-top:8px}
+.dash-streak-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.dash-last-match{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+.dash-section-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.dash-top-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.dash-top-row:last-child{border-bottom:none}
+.dash-rank{font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:var(--muted);width:20px}
+.dash-top-name{font-size:14px;font-weight:500;flex:1}
+.dash-top-val{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--red)}
 .admin-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px}
 .admin-tab{flex:1;padding:11px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.5px;background:none;border:none;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s}
 .admin-tab.active{color:var(--red);border-bottom-color:var(--red)}
@@ -364,6 +382,10 @@ body.dark .profile-stat{background:var(--surface2)}
     <button class="drawer-close" onclick="closeDrawer()">×</button>
   </div>
   <nav class="drawer-nav">
+    <button class="drawer-item" id="nav-dashboard" onclick="switchPage('dashboard',this)">
+      <span class="drawer-item-icon">🏠</span>
+      <span class="drawer-item-label">Accueil</span>
+    </button>
     <button class="drawer-item active" id="nav-tirage" onclick="switchPage('tirage',this)">
       <span class="drawer-item-icon">⚽</span>
       <span class="drawer-item-label">Tirage auto</span>
@@ -395,6 +417,11 @@ body.dark .profile-stat{background:var(--surface2)}
 </div>
 
 <main>
+
+<!-- ═══ DASHBOARD ═══ -->
+<div class="page" id="page-dashboard">
+  <div id="dashboard-content" style="padding-top:12px"></div>
+</div>
 
 <!-- ═══ TIRAGE ═══ -->
 <div class="page active" id="page-tirage">
@@ -701,14 +728,35 @@ function initDark(){
 // TAP LONG → PROFIL
 // ══════════════════════════════════════════
 let _lpTimer=null;
+let _lpFired=false; // true si le long press a déjà agi
+
 function setupLongPress(el, onLong, onShort){
   el.addEventListener('touchstart',e=>{
-    _lpTimer=setTimeout(()=>{_lpTimer=null;onLong();},500);
+    _lpFired=false;
+    _lpTimer=setTimeout(()=>{
+      _lpFired=true;
+      _lpTimer=null;
+      onLong();
+    },500);
   },{passive:true});
+
   el.addEventListener('touchend',e=>{
-    if(_lpTimer){clearTimeout(_lpTimer);_lpTimer=null;onShort();}
+    if(_lpTimer){
+      clearTimeout(_lpTimer);
+      _lpTimer=null;
+      if(!_lpFired) onShort();
+    }
   });
-  el.addEventListener('touchmove',()=>{if(_lpTimer){clearTimeout(_lpTimer);_lpTimer=null;}},{passive:true});
+
+  el.addEventListener('touchmove',()=>{
+    if(_lpTimer){clearTimeout(_lpTimer);_lpTimer=null;}
+  },{passive:true});
+
+  // Sur mobile, le click natif se déclenche après touchend
+  // On le bloque si le long press a agi
+  el.addEventListener('click',e=>{
+    if(_lpFired){e.stopPropagation();e.preventDefault();}
+  });
 }
 
 // ══════════════════════════════════════════
@@ -781,10 +829,10 @@ function switchPage(page, btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.drawer-item').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
-  // Activer le bon item dans le drawer
-  const navEl = document.getElementById('nav-'+page);
-  if(navEl) navEl.classList.add('active');
+  const navEl=document.getElementById('nav-'+page);
+  if(navEl)navEl.classList.add('active');
   closeDrawer();
+  if(page==='dashboard'){reloadMatches().then(()=>{renderStats();renderDashboard();});}
   if(page==='resultats'){reloadMatches().then(renderResults);}
   if(page==='stats'){reloadMatches().then(()=>{renderStats();renderDuos();});}
   if(page==='admin')renderAdmin();
@@ -822,19 +870,19 @@ function playerLevel(score){
   return             {cls:'pc-lvl-iron',   pos:'FER'};
 }
 
-function playerCard(p, isSel, clickFn, showProf, dealDelay=0){
+function playerCard(p, isSel, clickFn, showProf){
   const score=avg(p);
   const lvl=playerLevel(score);
   const forme=playerForm(p.n);
   const safeName=p.n.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-  const delayStyle=dealDelay>0?`animation-delay:${dealDelay}ms`:'';
   const miniStats=[
     {l:'ATK',v:p.atk},
     {l:'DEF',v:p.def},
     {l:'PHY',v:p.phy},
   ].map(s=>`<div class="pc-stat"><div class="pc-stat-val">${s.v.toFixed(1)}</div><div class="pc-stat-lbl">${s.l}</div></div>`).join('');
 
-  return `<div class="pc ${lvl.cls}${isSel?' sel':''} pc-dealt" style="${delayStyle}" onclick="${clickFn}">
+  // Pas d'onclick ici — géré par setupLongPress dans render()
+  return `<div class="pc ${lvl.cls}${isSel?' sel':''}">
     <div class="pc-stripe"></div>
     <div class="pc-rating">${(Math.round(score*10)/10).toFixed(1)}</div>
     <div class="pc-pos">${lvl.pos}</div>
@@ -853,20 +901,19 @@ function render(){
   const all=[...PLAYERS,...guests];
   document.getElementById('pgrid').innerHTML=all.map(p=>{
     const s=sel.has(p.n);
-    const fn='tog(\''+p.n.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')';
-    return playerCard(p,s,fn,true,0);
+    return playerCard(p,s,'',true);
   }).join('');
   updatePips(sel.size);
   document.getElementById('gobtn').disabled=sel.size!==10;
-  // Tap long sur mobile → ouvrir profil
+
+  // Attacher les événements après rendu
   document.querySelectorAll('.pgrid .pc').forEach((el,i)=>{
     const p=all[i];
-    if(!p)return;
-    const name=p.n;
-    setupLongPress(el,
-      ()=>openProfile(name),
-      ()=>tog(name)
-    );
+    if(!p) return;
+    // Desktop : click simple
+    el.addEventListener('click', ()=>tog(p.n));
+    // Mobile : tap court = sélection, tap long = profil
+    setupLongPress(el, ()=>openProfile(p.n), ()=>tog(p.n));
   });
 }
 
@@ -1427,8 +1474,8 @@ function drawPitch(){
   ctx.fillStyle='rgba(255,255,255,0.35)';ctx.font='13px Arial';ctx.fillText('vs',W/2,376);
   ctx.fillStyle='#0060A9';ctx.font='bold 16px Arial';ctx.fillText(currentSB,W/2+26,376);
   ctx.fillStyle='rgba(255,255,255,0.45)';ctx.font='11px Arial';ctx.fillText('moy. équipe',W/2,394);
-  drawTeam(ctx,currentA,'#9D2235',W,true);
-  drawTeam(ctx,currentB,'#0060A9',W,false);
+  drawTeamEnriched(ctx,currentA,'#9D2235',W,true);
+  drawTeamEnriched(ctx,currentB,'#0060A9',W,false);
 }
 
 function rrect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();ctx.fill();}
@@ -1670,6 +1717,198 @@ async function submitRatings(matchId,raterName){
   }catch(e){setSyncDot('err');showToast('Erreur envoi. Réessaie.',true);}
 }
 
+// ══════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════
+function renderDashboard(){
+  const el=document.getElementById('dashboard-content');
+  if(!el)return;
+
+  const stats=computeStats();
+  const totalMatchs=MATCHES.length;
+
+  // Dernier match
+  const last=MATCHES.length?MATCHES[0]:null;
+
+  // Meilleur win rate (min 3 matchs)
+  const ranked=PLAYERS.filter(p=>stats[p.n]&&stats[p.n].g>=3)
+    .sort((a,b)=>(stats[b.n].w/stats[b.n].g)-(stats[a.n].w/stats[a.n].g));
+
+  // Série en cours (joueur avec la plus longue série active)
+  function currentStreak(name){
+    const ms=MATCHES.filter(m=>(m.team_a||[]).includes(name)||(m.team_b||[]).includes(name));
+    let streak=0;
+    for(const m of ms){
+      const inA=(m.team_a||[]).includes(name);
+      const w=m.score_a>m.score_b?'A':m.score_a<m.score_b?'B':'D';
+      if(w==='D')break;
+      if((w==='A'&&inA)||(w==='B'&&!inA)){streak++;}else break;
+    }
+    return streak;
+  }
+  const streaks=PLAYERS.map(p=>({n:p.n,e:p.e,s:currentStreak(p.n)})).filter(x=>x.s>=2).sort((a,b)=>b.s-a.s);
+  const topStreak=streaks[0]||null;
+
+  // Top 3 joueurs par victoires
+  const top3=ranked.slice(0,3);
+
+  // Derniers résultats pour dots
+  const last5=MATCHES.slice(0,5).reverse();
+
+  let html='';
+
+  // Hero — stat principale
+  if(topStreak){
+    html+=`<div class="dash-hero">
+      <div class="dash-hero-title">Série en cours</div>
+      <div class="dash-hero-val">${topStreak.e||'⚽'} ${esc(topStreak.n)}</div>
+      <div class="dash-hero-sub">${topStreak.s} victoire${topStreak.s>1?'s':''} consécutive${topStreak.s>1?'s':''} 🔥</div>
+    </div>`;
+  } else if(totalMatchs===0){
+    html+=`<div class="dash-hero">
+      <div class="dash-hero-title">Bienvenue</div>
+      <div class="dash-hero-val">Le Datacentre</div>
+      <div class="dash-hero-sub">Enregistre ton premier match pour voir les stats !</div>
+    </div>`;
+  }
+
+  // Grille stats globales
+  html+=`<div class="dash-grid">
+    <div class="dash-card">
+      <div class="dash-card-label">Matchs joués</div>
+      <div class="dash-card-val">${totalMatchs}</div>
+      <div class="dash-card-sub">${PLAYERS.length} joueurs</div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-card-label">Derniers résultats</div>
+      <div class="dash-streak">
+        ${last5.map(m=>{
+          const w=m.score_a>m.score_b?'A':m.score_a<m.score_b?'B':'D';
+          const col=w==='D'?'#a05c00':w==='A'?'#9D2235':'#0060A9';
+          return `<div class="dash-streak-dot" style="background:${col}" title="${m.score_a}-${m.score_b}"></div>`;
+        }).join('')}
+      </div>
+      <div class="dash-card-sub" style="margin-top:6px">${last5.length?'':' '}</div>
+    </div>
+  </div>`;
+
+  // Dernier match
+  if(last){
+    const d=new Date(last.date).toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
+    const w=last.score_a>last.score_b?'A':last.score_a<last.score_b?'B':'Nul';
+    html+=`<div class="dash-last-match">
+      <div class="dash-section-title">Dernier match · ${d}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--red)">Éq. A${w==='A'?' ✓':''}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${(last.team_a||[]).join(', ')}</div>
+        </div>
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:24px;color:var(--text);padding:0 12px">${last.score_a}–${last.score_b}</div>
+        <div style="text-align:right">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--blue)">Éq. B${w==='B'?' ✓':''}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${(last.team_b||[]).join(', ')}</div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // Top 3 classement
+  if(top3.length){
+    const medals=['🥇','🥈','🥉'];
+    html+=`<div class="dash-last-match">
+      <div class="dash-section-title">Classement (win rate, min. 3 matchs)</div>
+      ${top3.map((p,i)=>{
+        const s=stats[p.n];
+        const wr=Math.round(s.w/s.g*100);
+        return `<div class="dash-top-row">
+          <div class="dash-rank">${medals[i]}</div>
+          <div style="font-size:18px">${p.e||'⚽'}</div>
+          <div class="dash-top-name">${esc(p.n)}</div>
+          <div class="dash-top-val">${wr}%</div>
+          <div style="font-size:11px;color:var(--muted);margin-left:4px">${s.g}j</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  el.innerHTML=html;
+}
+
+// ══════════════════════════════════════════
+// EXPORT PNG ENRICHI (Player Cards sur terrain)
+// ══════════════════════════════════════════
+function downloadPitchEnriched(){
+  const canvas=document.getElementById('pitch-canvas');
+  const a=document.createElement('a');
+  a.download='equipes-datacentre.png';
+  a.href=canvas.toDataURL('image/png');
+  a.click();
+}
+
+// Surcharge drawTeam pour les cartes enrichies dans le PNG
+function drawTeamEnriched(ctx, team, color, W, isTop){
+  const rows=[[0.5],[0.28,0.72],[0.5],[0.28,0.72]];
+  const yS=isTop?108:418, yE=isTop?348:658;
+  const yStep=(yE-yS)/(rows.length-1);
+  let idx=0;
+  rows.forEach((row,ri)=>{
+    const y=isTop?yS+ri*yStep:yE-ri*yStep;
+    row.forEach(xr=>{
+      if(idx>=team.length)return;
+      const p=team[idx++];
+      const cx=30+xr*(W-60);
+      const score=avg(p);
+      const lvlColor=score>=4.3?'#c8970a':score>=3.8?'#7a8a9a':score>=3.2?'#9a5a2a':'#555';
+
+      // Carte rectangulaire
+      const cw=68, ch=82;
+      ctx.fillStyle='rgba(10,10,10,0.85)';
+      rrect(ctx,cx-cw/2,y-ch/2,cw,ch,8);
+
+      // Bande de couleur en haut
+      ctx.fillStyle=lvlColor;
+      ctx.beginPath();
+      ctx.roundRect(cx-cw/2,y-ch/2,cw,6,{upperLeft:8,upperRight:8,lowerLeft:0,lowerRight:0});
+      ctx.fill();
+
+      // Emoji joueur
+      ctx.font='22px Arial';ctx.textAlign='center';
+      ctx.fillText(p.e||'⚽',cx,y-ch/2+28);
+
+      // Note
+      ctx.fillStyle=lvlColor;
+      ctx.font='bold 13px Arial';
+      ctx.fillText(score.toFixed(1),cx,y-ch/2+46);
+
+      // Nom
+      ctx.fillStyle='rgba(255,255,255,0.9)';
+      ctx.font='bold 10px Arial';
+      const shortName=p.n.length>8?p.n.slice(0,7)+'…':p.n;
+      ctx.fillText(shortName,cx,y-ch/2+62);
+
+      // Mini stats ATK DEF PHY
+      ctx.font='8px Arial';
+      ctx.fillStyle='rgba(255,255,255,0.5)';
+      const stats3=[p.atk.toFixed(1),p.def.toFixed(1),p.phy.toFixed(1)];
+      const lw=cw/3;
+      stats3.forEach((v,si)=>{
+        ctx.fillStyle='rgba(255,255,255,0.5)';
+        ctx.fillText(['ATK','DEF','PHY'][si],cx-cw/2+lw*si+lw/2,y-ch/2+74);
+        ctx.fillStyle='rgba(255,255,255,0.85)';
+        ctx.font='bold 8px Arial';
+        ctx.fillText(v,cx-cw/2+lw*si+lw/2,y-ch/2+83);
+        ctx.font='8px Arial';
+      });
+
+      // Indicateur couleur équipe (point)
+      ctx.fillStyle=color;
+      ctx.beginPath();
+      ctx.arc(cx+cw/2-6,y-ch/2+12,4,0,Math.PI*2);
+      ctx.fill();
+    });
+  });
+}
+
 // Lancement
 init();
 
@@ -1695,6 +1934,12 @@ async function init() {
     } else {
       initDark();
       render();
+      renderDashboard();
+      // Afficher le dashboard par défaut
+      document.getElementById('page-tirage').classList.remove('active');
+      document.getElementById('page-dashboard').classList.add('active');
+      document.getElementById('nav-tirage').classList.remove('active');
+      document.getElementById('nav-dashboard').classList.add('active');
     }
   }catch(err){
     console.error('Supabase error:',err);
