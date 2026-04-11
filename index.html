@@ -356,6 +356,59 @@ body.dark .profile-stat{background:var(--surface2)}
 .admin-tab{flex:1;padding:11px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.5px;background:none;border:none;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s}
 .admin-tab.active{color:var(--red);border-bottom-color:var(--red)}
 .admin-pane{display:none}.admin-pane.active{display:block}
+
+/* Feuille de match */
+.fm-header{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+.fm-time-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.fm-time-label{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.fm-time-input{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;width:90px}
+.fm-time-input:focus{outline:none;border-color:var(--red)}
+.fm-counters{display:flex;gap:6px}
+.fm-counter-pill{display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;font-family:'Syne',sans-serif}
+.fm-pill-present{background:#EAF5F0;color:#1a7a4a;border:1px solid rgba(26,122,74,0.2)}
+.fm-pill-incertain{background:#FEF6E7;color:#a05c00;border:1px solid rgba(160,92,0,0.2)}
+.fm-pill-reserve{background:#EEF4FB;color:#0060A9;border:1px solid rgba(0,96,169,0.2)}
+.fm-pill-absent{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+
+.fm-section{margin-bottom:14px}
+.fm-section-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.fm-section-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.fm-section-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.fm-section-count{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:var(--muted);margin-left:auto}
+
+.fm-player{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;transition:border-color .12s;user-select:none}
+.fm-player:active{transform:scale(0.98)}
+.fm-player.fm-present{border-color:rgba(26,122,74,0.35);background:#F5FBF7}
+.fm-player.fm-incertain{border-color:rgba(160,92,0,0.35);background:#FEFBF2}
+.fm-player.fm-reserve{border-color:rgba(0,96,169,0.25);background:#F0F6FC}
+body.dark .fm-player.fm-present{background:rgba(26,122,74,0.1)}
+body.dark .fm-player.fm-incertain{background:rgba(160,92,0,0.1)}
+body.dark .fm-player.fm-reserve{background:rgba(0,96,169,0.1)}
+.fm-player-emoji{font-size:22px;line-height:1}
+.fm-player-info{flex:1;min-width:0}
+.fm-player-name{font-size:14px;font-weight:500;color:var(--text)}
+.fm-player-alias{font-size:11px;color:var(--muted)}
+.fm-player-score{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--muted)}
+.fm-status-badge{font-size:16px;flex-shrink:0}
+
+/* Mini menu statut */
+.fm-menu-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.4);display:flex;align-items:flex-end;justify-content:center}
+.fm-menu{background:var(--surface);border-radius:20px 20px 0 0;padding:16px;width:100%;max-width:520px}
+.fm-menu-title{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;text-align:center;margin-bottom:14px;color:var(--text)}
+.fm-menu-btn{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--border);border-radius:12px;margin-bottom:8px;cursor:pointer;background:var(--surface);width:100%;transition:background .12s}
+.fm-menu-btn:active{transform:scale(0.98)}
+.fm-menu-btn-icon{font-size:22px;width:28px;text-align:center}
+.fm-menu-btn-label{font-size:15px;font-weight:500;color:var(--text);font-family:'DM Sans',sans-serif}
+.fm-menu-cancel{text-align:center;padding:12px;font-size:14px;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;border:none;background:none;width:100%}
+
+/* Score modal */
+.fm-score-modal{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:16px}
+.fm-score-card{background:var(--surface);border-radius:20px;padding:24px;width:100%;max-width:400px}
+.fm-score-title{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;text-align:center;margin-bottom:20px}
+.fm-score-row{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-bottom:20px}
+.fm-score-input{font-family:'Syne',sans-serif;font-weight:800;font-size:36px;text-align:center;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px;color:var(--text);width:100%}
+.fm-score-input:focus{outline:none;border-color:var(--red)}
+.fm-score-sep{font-family:'Syne',sans-serif;font-weight:800;font-size:24px;color:var(--muted);text-align:center}
 </style>
 </head>
 <body>
@@ -390,6 +443,10 @@ body.dark .profile-stat{background:var(--surface2)}
       <span class="drawer-item-icon">⚽</span>
       <span class="drawer-item-label">Tirage auto</span>
     </button>
+    <button class="drawer-item" id="nav-feuille" onclick="switchPage('feuille',this)">
+      <span class="drawer-item-icon">📝</span>
+      <span class="drawer-item-label">Feuille de match</span>
+    </button>
     <button class="drawer-item" id="nav-manuel" onclick="switchPage('manuel',this)">
       <span class="drawer-item-icon">✏️</span>
       <span class="drawer-item-label">Composition manuelle</span>
@@ -421,6 +478,70 @@ body.dark .profile-stat{background:var(--surface2)}
 <!-- ═══ DASHBOARD ═══ -->
 <div class="page" id="page-dashboard">
   <div id="dashboard-content" style="padding-top:12px"></div>
+</div>
+
+<!-- ═══ FEUILLE DE MATCH ═══ -->
+<div class="page" id="page-feuille">
+
+  <!-- Header avec heure + compteurs -->
+  <div class="fm-header">
+    <div class="fm-time-row">
+      <span class="fm-time-label">Heure</span>
+      <input type="time" id="fm-time" class="fm-time-input" value="20:30">
+      <input type="date" id="fm-date" class="fm-time-input" style="width:130px;font-size:13px">
+    </div>
+    <div class="fm-counters" id="fm-counters"></div>
+  </div>
+
+  <!-- Sections joueurs -->
+  <div id="fm-sections"></div>
+
+  <!-- Actions -->
+  <div id="fm-actions" style="margin-top:4px"></div>
+
+</div>
+
+<!-- Menu statut (bottom sheet) -->
+<div class="fm-menu-overlay" id="fm-menu" style="display:none" onclick="closeFmMenu()">
+  <div class="fm-menu" onclick="event.stopPropagation()">
+    <div class="fm-menu-title" id="fm-menu-player-name"></div>
+    <button class="fm-menu-btn" onclick="setStatus(fmMenuPlayer,'present')">
+      <span class="fm-menu-btn-icon">✅</span>
+      <span class="fm-menu-btn-label">Présent</span>
+    </button>
+    <button class="fm-menu-btn" onclick="setStatus(fmMenuPlayer,'incertain')">
+      <span class="fm-menu-btn-icon">🟡</span>
+      <span class="fm-menu-btn-label">Incertain</span>
+    </button>
+    <button class="fm-menu-btn" onclick="setStatus(fmMenuPlayer,'reserve')">
+      <span class="fm-menu-btn-icon">🔵</span>
+      <span class="fm-menu-btn-label">Réserve</span>
+    </button>
+    <button class="fm-menu-btn" onclick="setStatus(fmMenuPlayer,'absent')">
+      <span class="fm-menu-btn-icon">❌</span>
+      <span class="fm-menu-btn-label">Absent</span>
+    </button>
+    <button class="fm-menu-cancel" onclick="closeFmMenu()">Annuler</button>
+  </div>
+</div>
+
+<!-- Modal score -->
+<div class="fm-score-modal" id="fm-score-modal" style="display:none">
+  <div class="fm-score-card">
+    <div class="fm-score-title">Score du match</div>
+    <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:4px;text-align:center;margin-bottom:8px">
+      <div style="font-size:10px;font-family:'Syne',sans-serif;font-weight:700;letter-spacing:1px;color:var(--red)">ÉQ. A</div>
+      <div></div>
+      <div style="font-size:10px;font-family:'Syne',sans-serif;font-weight:700;letter-spacing:1px;color:var(--blue)">ÉQ. B</div>
+    </div>
+    <div class="fm-score-row">
+      <input type="number" class="fm-score-input" id="fm-score-a" min="0" max="99" value="0">
+      <div class="fm-score-sep">—</div>
+      <input type="number" class="fm-score-input" id="fm-score-b" min="0" max="99" value="0">
+    </div>
+    <button class="btn btn-go" style="margin:0" onclick="saveFmMatch()">Enregistrer</button>
+    <button class="btn btn-outline" style="margin-top:8px" onclick="document.getElementById('fm-score-modal').style.display='none'">Annuler</button>
+  </div>
 </div>
 
 <!-- ═══ TIRAGE ═══ -->
@@ -798,6 +919,7 @@ function switchPage(page, btn){
   if(navEl)navEl.classList.add('active');
   closeDrawer();
   if(page==='dashboard'){reloadMatches().then(()=>{renderStats();renderDashboard();});}
+  if(page==='feuille'){initFeuille();}
   if(page==='resultats'){reloadMatches().then(renderResults);}
   if(page==='stats'){reloadMatches().then(()=>{renderStats();renderDuos();});}
   if(page==='admin')renderAdmin();
@@ -1872,6 +1994,250 @@ function drawTeamEnriched(ctx, team, color, W, isTop){
       ctx.fill();
     });
   });
+}
+
+// ══════════════════════════════════════════
+// FEUILLE DE MATCH
+// ══════════════════════════════════════════
+
+// Statuts : 'present' | 'incertain' | 'reserve' | 'absent'
+const STATUS_META = {
+  present:  {label:'Présent',   icon:'✅', dot:'#1a7a4a', pill:'fm-pill-present'},
+  incertain:{label:'Incertain', icon:'🟡', dot:'#a05c00', pill:'fm-pill-incertain'},
+  reserve:  {label:'Réserve',   icon:'🔵', dot:'#0060A9', pill:'fm-pill-reserve'},
+  absent:   {label:'Absent',    icon:'❌', dot:'var(--gray)', pill:'fm-pill-absent'},
+};
+
+let fmStatuses = {}; // {playerName: status}
+let fmTeamA = [], fmTeamB = [];
+let fmMenuPlayer = null;
+
+function initFeuille(){
+  // Charger depuis localStorage (persistance de la soirée)
+  try{
+    const saved = localStorage.getItem('dc_feuille');
+    if(saved){
+      const d = JSON.parse(saved);
+      const today = new Date().toISOString().split('T')[0];
+      if(d.date === today){
+        fmStatuses = d.statuses||{};
+        fmTeamA = d.teamA||[];
+        fmTeamB = d.teamB||[];
+        if(d.time) document.getElementById('fm-time').value = d.time;
+      }
+    }
+  }catch(e){}
+
+  // Date par défaut = aujourd'hui
+  document.getElementById('fm-date').value = new Date().toISOString().split('T')[0];
+
+  // Joueurs sans statut → absent par défaut
+  PLAYERS.forEach(p=>{
+    if(!fmStatuses[p.n]) fmStatuses[p.n]='absent';
+  });
+
+  renderFeuille();
+}
+
+function saveFeuille(){
+  const today = new Date().toISOString().split('T')[0];
+  localStorage.setItem('dc_feuille', JSON.stringify({
+    date: today,
+    statuses: fmStatuses,
+    teamA: fmTeamA,
+    teamB: fmTeamB,
+    time: document.getElementById('fm-time')?.value,
+  }));
+}
+
+function renderFeuille(){
+  const groups = {present:[], incertain:[], reserve:[], absent:[]};
+  PLAYERS.forEach(p=>{
+    const s = fmStatuses[p.n]||'absent';
+    groups[s].push(p);
+  });
+
+  const nPresent = groups.present.length;
+
+  // Compteurs
+  document.getElementById('fm-counters').innerHTML =
+    `<div class="fm-counter-pill fm-pill-present">✅ ${nPresent}</div>`
+    +`<div class="fm-counter-pill fm-pill-incertain">🟡 ${groups.incertain.length}</div>`
+    +`<div class="fm-counter-pill fm-pill-reserve">🔵 ${groups.reserve.length}</div>`
+    +`<div class="fm-counter-pill fm-pill-absent">❌ ${groups.absent.length}</div>`;
+
+  // Sections dans l'ordre : Présents, Incertains, Réserve, Absents
+  const order = ['present','incertain','reserve','absent'];
+  const titles = {present:'Présents', incertain:'Incertains', reserve:'Réserve', absent:'Absents'};
+
+  document.getElementById('fm-sections').innerHTML = order.map(status=>{
+    const players = groups[status];
+    const meta = STATUS_META[status];
+    return `<div class="fm-section">
+      <div class="fm-section-header">
+        <div class="fm-section-dot" style="background:${meta.dot}"></div>
+        <div class="fm-section-title">${titles[status]}</div>
+        <div class="fm-section-count">${players.length}</div>
+      </div>
+      ${players.length === 0
+        ? `<div style="font-size:12px;color:var(--muted);font-style:italic;padding:6px 0">Aucun joueur</div>`
+        : players.map(p => fmPlayerRow(p, status)).join('')
+      }
+    </div>`;
+  }).join('');
+
+  // Actions
+  renderFmActions(groups);
+}
+
+function fmPlayerRow(p, status){
+  const meta = STATUS_META[status];
+  const score = avg(p);
+  return `<div class="fm-player fm-${status}" onclick="openFmMenu('${p.n.replace(/'/g,"\\'")}')">
+    <div class="fm-player-emoji">${p.e||'⚽'}</div>
+    <div class="fm-player-info">
+      <div class="fm-player-name">${esc(p.n)}</div>
+      ${p.a?`<div class="fm-player-alias">"${esc(p.a)}"</div>`:''}
+    </div>
+    <div class="fm-player-score">${score.toFixed(2)}</div>
+    <div class="fm-status-badge">${meta.icon}</div>
+  </div>`;
+}
+
+function renderFmActions(groups){
+  const nPresent = groups.present.length;
+  const nIncertain = groups.incertain.length;
+  let html = '';
+
+  // Bouton WhatsApp feuille
+  html += `<button class="btn btn-blue" onclick="copyFmWA()" style="margin-bottom:8px">Copier la feuille pour WhatsApp</button>`;
+
+  if(nPresent >= 10){
+    // Bouton générer équipes
+    html += `<button class="btn btn-go" onclick="fmGenerateTeams()">Générer les équipes (${nPresent} présents)</button>`;
+
+    // Si équipes déjà générées
+    if(fmTeamA.length && fmTeamB.length){
+      const sA = (fmTeamA.reduce((s,n)=>{const p=PLAYERS.find(x=>x.n===n);return s+(p?avg(p):0);},0)/fmTeamA.length).toFixed(2);
+      const sB = (fmTeamB.reduce((s,n)=>{const p=PLAYERS.find(x=>x.n===n);return s+(p?avg(p):0);},0)/fmTeamB.length).toFixed(2);
+      html += `<div class="fm-header" style="margin-top:10px">
+        <div class="dash-section-title">Équipes générées</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div>
+            <div style="font-size:10px;font-weight:700;font-family:'Syne',sans-serif;letter-spacing:1px;text-transform:uppercase;color:var(--red);margin-bottom:4px">Équipe A · ${sA}</div>
+            ${fmTeamA.map(n=>{const p=PLAYERS.find(x=>x.n===n);return `<div style="font-size:13px;padding:3px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px"><span>${p?.e||'⚽'}</span>${esc(n)}</div>`;}).join('')}
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;font-family:'Syne',sans-serif;letter-spacing:1px;text-transform:uppercase;color:var(--blue);margin-bottom:4px">Équipe B · ${sB}</div>
+            ${fmTeamB.map(n=>{const p=PLAYERS.find(x=>x.n===n);return `<div style="font-size:13px;padding:3px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px"><span>${p?.e||'⚽'}</span>${esc(n)}</div>`;}).join('')}
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button class="btn btn-blue" style="margin:0" onclick="fmShowPitch()">Voir terrain PNG</button>
+          <button class="btn btn-go" style="margin:0" onclick="document.getElementById('fm-score-modal').style.display='flex'">Match joué !</button>
+        </div>
+      </div>`;
+    }
+  } else if(nPresent > 0){
+    html += `<div style="text-align:center;font-size:13px;color:var(--muted);padding:10px 0">${10-nPresent} joueur${10-nPresent>1?'s':''} manquant${10-nPresent>1?'s':''} pour générer les équipes</div>`;
+    if(nIncertain > 0){
+      html += `<button class="btn btn-secondary" onclick="fmConfirmIncertains()">Confirmer les incertains comme présents (${nIncertain})</button>`;
+    }
+  }
+
+  html += `<button class="btn btn-danger" style="margin-top:8px" onclick="resetFeuille()">Réinitialiser la feuille</button>`;
+  document.getElementById('fm-actions').innerHTML = html;
+}
+
+// ── Menu statut ──
+function openFmMenu(name){
+  fmMenuPlayer = name;
+  document.getElementById('fm-menu-player-name').textContent = name;
+  document.getElementById('fm-menu').style.display = 'flex';
+}
+function closeFmMenu(){
+  document.getElementById('fm-menu').style.display = 'none';
+  fmMenuPlayer = null;
+}
+function setStatus(name, status){
+  if(!name) return;
+  fmStatuses[name] = status;
+  fmTeamA = []; fmTeamB = []; // réinitialiser équipes si statut change
+  saveFeuille();
+  closeFmMenu();
+  renderFeuille();
+}
+
+// ── Générer équipes depuis la feuille ──
+function fmGenerateTeams(){
+  const presents = PLAYERS.filter(p=>fmStatuses[p.n]==='present');
+  if(presents.length < 2) return;
+  const pool = presents.slice(0,10);
+  const {A,B} = bestSplit(pool);
+  fmTeamA = A.map(p=>p.n);
+  fmTeamB = B.map(p=>p.n);
+  saveFeuille();
+  renderFeuille();
+  showToast('Équipes générées !');
+}
+
+// ── Terrain PNG ──
+function fmShowPitch(){
+  const tA = fmTeamA.map(n=>PLAYERS.find(p=>p.n===n)).filter(Boolean);
+  const tB = fmTeamB.map(n=>PLAYERS.find(p=>p.n===n)).filter(Boolean);
+  currentA = tA; currentB = tB;
+  currentSA = tA.length?(tA.reduce((s,p)=>s+avg(p),0)/tA.length).toFixed(2):'—';
+  currentSB = tB.length?(tB.reduce((s,p)=>s+avg(p),0)/tB.length).toFixed(2):'—';
+  document.getElementById('pitch-overlay').style.display='flex';
+  drawPitch();
+}
+
+// ── Match joué → enregistrer le score ──
+async function saveFmMatch(){
+  const date = document.getElementById('fm-date').value || new Date().toISOString().split('T')[0];
+  const sA = parseInt(document.getElementById('fm-score-a').value)||0;
+  const sB = parseInt(document.getElementById('fm-score-b').value)||0;
+  if(!fmTeamA.length || !fmTeamB.length){showToast('Génère les équipes d\'abord',true);return;}
+  setSyncDot('loading');
+  try{
+    await dbInsert('matches',{id:Date.now(),date,team_a:fmTeamA,team_b:fmTeamB,score_a:sA,score_b:sB});
+    MATCHES = await dbGet('matches','order=date.desc');
+    setSyncDot('ok');
+    document.getElementById('fm-score-modal').style.display='none';
+    // Réinitialiser les équipes de la feuille après enregistrement
+    fmTeamA=[]; fmTeamB=[];
+    saveFeuille();
+    renderFeuille();
+    showToast('Match enregistré !');
+  }catch(e){setSyncDot('err');showToast('Erreur sauvegarde',true);}
+}
+
+// ── Copier feuille WhatsApp ──
+function copyFmWA(){
+  const groups = {present:[], incertain:[], reserve:[], absent:[]};
+  PLAYERS.forEach(p=>{ groups[fmStatuses[p.n]||'absent'].push(p.n); });
+  const time = document.getElementById('fm-time')?.value || '20h30';
+  let txt = `📋 FEUILLE DE MATCH — ${time}\n\n`;
+  if(groups.present.length) txt+=`✅ Présents (${groups.present.length})\n${groups.present.map(n=>'• '+n).join('\n')}\n\n`;
+  if(groups.incertain.length) txt+=`🟡 Incertains\n${groups.incertain.map(n=>'• '+n).join('\n')}\n\n`;
+  if(groups.reserve.length) txt+=`🔵 Réserve\n${groups.reserve.map(n=>'• '+n).join('\n')}\n\n`;
+  if(groups.absent.length) txt+=`❌ Absents\n${groups.absent.map(n=>'• '+n).join('\n')}`;
+  navigator.clipboard.writeText(txt).then(()=>showToast('Feuille copiée !'));
+}
+
+// ── Confirmer incertains ──
+function fmConfirmIncertains(){
+  PLAYERS.forEach(p=>{ if(fmStatuses[p.n]==='incertain') fmStatuses[p.n]='present'; });
+  saveFeuille(); renderFeuille();
+}
+
+// ── Réinitialiser ──
+function resetFeuille(){
+  if(!confirm('Réinitialiser la feuille ? Les statuts seront effacés.')) return;
+  fmStatuses={};
+  fmTeamA=[]; fmTeamB=[];
+  PLAYERS.forEach(p=>{ fmStatuses[p.n]='absent'; });
+  saveFeuille(); renderFeuille();
 }
 
 // Lancement
