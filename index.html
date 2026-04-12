@@ -482,44 +482,16 @@ body.dark .fm-player.fm-reserve{background:rgba(0,96,169,0.1)}
 
 <!-- ═══ FEUILLE DE MATCH ═══ -->
 <div class="page" id="page-feuille">
-
-  <!-- Header avec heure + compteurs -->
-  <div class="fm-header">
-    <div class="fm-time-row">
-      <span class="fm-time-label">Heure</span>
-      <input type="time" id="fm-time" class="fm-time-input" value="20:30">
-      <input type="date" id="fm-date" class="fm-time-input" style="width:130px;font-size:13px">
-    </div>
-    <div class="fm-counters" id="fm-counters"></div>
-  </div>
-
-  <!-- Sections joueurs -->
-  <div id="fm-sections"></div>
-
-  <!-- Actions -->
-  <div id="fm-actions" style="margin-top:4px"></div>
-
+  <div id="fm-body"></div>
 </div>
 
-<!-- Menu statut (bottom sheet) -->
+<!-- Bottom sheet statut -->
 <div class="fm-menu-overlay" id="fm-menu" style="display:none" onclick="closeFmMenu()">
   <div class="fm-menu" onclick="event.stopPropagation()">
     <div class="fm-menu-title" id="fm-menu-player-name"></div>
-    <button class="fm-menu-btn" onclick="setStatus(fmMenuPlayer,'present')">
-      <span class="fm-menu-btn-icon">✅</span>
-      <span class="fm-menu-btn-label">Présent</span>
-    </button>
-    <button class="fm-menu-btn" onclick="setStatus(fmMenuPlayer,'incertain')">
-      <span class="fm-menu-btn-icon">🟡</span>
-      <span class="fm-menu-btn-label">Incertain</span>
-    </button>
-    <button class="fm-menu-btn" onclick="setStatus(fmMenuPlayer,'reserve')">
-      <span class="fm-menu-btn-icon">🔵</span>
-      <span class="fm-menu-btn-label">Réserve</span>
-    </button>
-    <button class="fm-menu-btn" onclick="setStatus(fmMenuPlayer,'absent')">
-      <span class="fm-menu-btn-icon">❌</span>
-      <span class="fm-menu-btn-label">Absent</span>
+    <button class="fm-menu-btn" onclick="fmTogglePlayer(fmMenuPlayer)">
+      <span class="fm-menu-btn-icon" id="fm-menu-action-icon">✅</span>
+      <span class="fm-menu-btn-label" id="fm-menu-action-label">Marquer présent</span>
     </button>
     <button class="fm-menu-cancel" onclick="closeFmMenu()">Annuler</button>
   </div>
@@ -1844,7 +1816,10 @@ function renderDashboard(){
 
   let html='';
 
-  // Hero — stat principale
+  // Bouton principal feuille de match
+  html += `<button class="btn btn-go" style="margin-bottom:12px" onclick="switchPage('feuille',document.getElementById('nav-feuille'))">
+    📝 Démarrer / ouvrir la feuille de match
+  </button>`;
   if(topStreak){
     html+=`<div class="dash-hero">
       <div class="dash-hero-title">Série en cours</div>
@@ -1997,247 +1972,299 @@ function drawTeamEnriched(ctx, team, color, W, isTop){
 }
 
 // ══════════════════════════════════════════
-// FEUILLE DE MATCH
+// FEUILLE DE MATCH — Supabase
 // ══════════════════════════════════════════
 
-// Statuts : 'present' | 'incertain' | 'reserve' | 'absent'
-const STATUS_META = {
-  present:  {label:'Présent',   icon:'✅', dot:'#1a7a4a', pill:'fm-pill-present'},
-  incertain:{label:'Incertain', icon:'🟡', dot:'#a05c00', pill:'fm-pill-incertain'},
-  reserve:  {label:'Réserve',   icon:'🔵', dot:'#0060A9', pill:'fm-pill-reserve'},
-  absent:   {label:'Absent',    icon:'❌', dot:'var(--gray)', pill:'fm-pill-absent'},
+let FM = {
+  presents: [],   // noms des joueurs du catalogue
+  invites: [],    // [{n, atk, def, phy, tec, men, e}]
+  team_a: [],
+  team_b: [],
+  date: '',
+  heure: '20:30',
 };
-
-let fmStatuses = {}; // {playerName: status}
-let fmTeamA = [], fmTeamB = [];
 let fmMenuPlayer = null;
+let fmMenuIsPresent = false;
 
-function initFeuille(){
-  // Charger depuis localStorage (persistance de la soirée)
+// ── Supabase helpers feuille ──
+async function fmLoad(){
   try{
-    const saved = localStorage.getItem('dc_feuille');
-    if(saved){
-      const d = JSON.parse(saved);
-      const today = new Date().toISOString().split('T')[0];
-      if(d.date === today){
-        fmStatuses = d.statuses||{};
-        fmTeamA = d.teamA||[];
-        fmTeamB = d.teamB||[];
-        if(d.time) document.getElementById('fm-time').value = d.time;
-      }
+    const rows = await dbGet('feuille','id=eq.active');
+    if(rows.length){
+      const r = rows[0];
+      FM.presents = r.presents||[];
+      FM.invites  = r.invites||[];
+      FM.team_a   = r.team_a||[];
+      FM.team_b   = r.team_b||[];
+      FM.date     = r.date||new Date().toISOString().split('T')[0];
+      FM.heure    = r.heure||'20:30';
+    } else {
+      FM.date = new Date().toISOString().split('T')[0];
     }
-  }catch(e){}
+  }catch(e){ console.warn('fmLoad error',e); }
+}
 
-  // Date par défaut = aujourd'hui
-  document.getElementById('fm-date').value = new Date().toISOString().split('T')[0];
+async function fmSave(){
+  setSyncDot('loading');
+  try{
+    // Upsert : insert si n'existe pas, update sinon
+    const payload = {
+      id:'active',
+      date: FM.date,
+      heure: FM.heure,
+      presents: FM.presents,
+      invites: FM.invites,
+      team_a: FM.team_a,
+      team_b: FM.team_b,
+      updated_at: new Date().toISOString(),
+    };
+    await fetch(SUPA_URL+'/rest/v1/feuille', {
+      method:'POST',
+      headers:{...HEADERS,'Prefer':'resolution=merge-duplicates,return=minimal'},
+      body: JSON.stringify(payload),
+    });
+    setSyncDot('ok');
+  }catch(e){ setSyncDot('err'); showToast('Erreur sauvegarde',true); }
+}
 
-  // Joueurs sans statut → absent par défaut
-  PLAYERS.forEach(p=>{
-    if(!fmStatuses[p.n]) fmStatuses[p.n]='absent';
-  });
-
+// ── Init & render ──
+async function initFeuille(){
+  document.getElementById('fm-body').innerHTML =
+    '<div style="text-align:center;padding:40px;color:var(--muted)">Chargement...</div>';
+  await fmLoad();
   renderFeuille();
 }
 
-function saveFeuille(){
-  const today = new Date().toISOString().split('T')[0];
-  localStorage.setItem('dc_feuille', JSON.stringify({
-    date: today,
-    statuses: fmStatuses,
-    teamA: fmTeamA,
-    teamB: fmTeamB,
-    time: document.getElementById('fm-time')?.value,
-  }));
-}
-
 function renderFeuille(){
-  const groups = {present:[], incertain:[], reserve:[], absent:[]};
-  PLAYERS.forEach(p=>{
-    const s = fmStatuses[p.n]||'absent';
-    groups[s].push(p);
-  });
+  const allPools = [...PLAYERS, ...FM.invites]; // catalogue + invités
+  const presentSet = new Set(FM.presents);
+  const present = allPools.filter(p=>presentSet.has(p.n));
+  const absent  = allPools.filter(p=>!presentSet.has(p.n));
+  const n = present.length;
 
-  const nPresent = groups.present.length;
+  // Header
+  let html = `
+  <div class="fm-header">
+    <div class="fm-time-row">
+      <span class="fm-time-label">Heure</span>
+      <input type="time" id="fm-time" class="fm-time-input" value="${esc(FM.heure)}"
+        onchange="FM.heure=this.value;fmSave()">
+      <input type="date" id="fm-date" class="fm-time-input" style="width:130px;font-size:13px" value="${esc(FM.date)}"
+        onchange="FM.date=this.value;fmSave()">
+    </div>
+    <div class="fm-counters">
+      <div class="fm-counter-pill fm-pill-present">✅ ${n} présent${n>1?'s':''}</div>
+      <div class="fm-counter-pill fm-pill-absent">❌ ${absent.length}</div>
+    </div>
+  </div>`;
 
-  // Compteurs
-  document.getElementById('fm-counters').innerHTML =
-    `<div class="fm-counter-pill fm-pill-present">✅ ${nPresent}</div>`
-    +`<div class="fm-counter-pill fm-pill-incertain">🟡 ${groups.incertain.length}</div>`
-    +`<div class="fm-counter-pill fm-pill-reserve">🔵 ${groups.reserve.length}</div>`
-    +`<div class="fm-counter-pill fm-pill-absent">❌ ${groups.absent.length}</div>`;
+  // Présents
+  html += `<div class="fm-section">
+    <div class="fm-section-header">
+      <div class="fm-section-dot" style="background:#1a7a4a"></div>
+      <div class="fm-section-title">Présents</div>
+      <div class="fm-section-count">${n} / 10</div>
+    </div>
+    ${present.length===0
+      ? '<div style="font-size:12px;color:var(--muted);font-style:italic;padding:6px 0">Aucun joueur coché</div>'
+      : present.map(p=>fmRow(p,true)).join('')
+    }
+  </div>`;
 
-  // Sections dans l'ordre : Présents, Incertains, Réserve, Absents
-  const order = ['present','incertain','reserve','absent'];
-  const titles = {present:'Présents', incertain:'Incertains', reserve:'Réserve', absent:'Absents'};
+  // Ajouter un invité
+  html += `<div style="margin-bottom:14px">
+    <div class="fm-section-header" style="margin-bottom:8px">
+      <div class="fm-section-dot" style="background:var(--muted)"></div>
+      <div class="fm-section-title">Ajouter un invité</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <input id="fm-guest-name" type="text" class="fld" placeholder="Prénom..." style="flex:1">
+      <select id="fm-guest-profile" class="fld" style="flex:1">
+        <option value="avg">Profil moyen</option>
+        <option value="atk">Attaquant</option>
+        <option value="def">Défenseur</option>
+        <option value="tec">Technicien</option>
+        <option value="phy">Athlète</option>
+      </select>
+    </div>
+    <button class="btn btn-secondary" style="margin-top:6px" onclick="fmAddGuest()">Ajouter l'invité</button>
+  </div>`;
 
-  document.getElementById('fm-sections').innerHTML = order.map(status=>{
-    const players = groups[status];
-    const meta = STATUS_META[status];
-    return `<div class="fm-section">
-      <div class="fm-section-header">
-        <div class="fm-section-dot" style="background:${meta.dot}"></div>
-        <div class="fm-section-title">${titles[status]}</div>
-        <div class="fm-section-count">${players.length}</div>
-      </div>
-      ${players.length === 0
-        ? `<div style="font-size:12px;color:var(--muted);font-style:italic;padding:6px 0">Aucun joueur</div>`
-        : players.map(p => fmPlayerRow(p, status)).join('')
-      }
-    </div>`;
-  }).join('');
+  // Absents / non cochés
+  html += `<div class="fm-section">
+    <div class="fm-section-header">
+      <div class="fm-section-dot" style="background:var(--gray)"></div>
+      <div class="fm-section-title">Joueurs</div>
+      <div class="fm-section-count">${absent.length}</div>
+    </div>
+    ${absent.map(p=>fmRow(p,false)).join('')}
+  </div>`;
 
   // Actions
-  renderFmActions(groups);
-}
-
-function fmPlayerRow(p, status){
-  const meta = STATUS_META[status];
-  const score = avg(p);
-  return `<div class="fm-player fm-${status}" onclick="openFmMenu('${p.n.replace(/'/g,"\\'")}')">
-    <div class="fm-player-emoji">${p.e||'⚽'}</div>
-    <div class="fm-player-info">
-      <div class="fm-player-name">${esc(p.n)}</div>
-      ${p.a?`<div class="fm-player-alias">"${esc(p.a)}"</div>`:''}
-    </div>
-    <div class="fm-player-score">${score.toFixed(2)}</div>
-    <div class="fm-status-badge">${meta.icon}</div>
-  </div>`;
-}
-
-function renderFmActions(groups){
-  const nPresent = groups.present.length;
-  const nIncertain = groups.incertain.length;
-  let html = '';
+  html += '<div id="fm-actions" style="margin-top:4px">';
 
   // Bouton WhatsApp feuille
   html += `<button class="btn btn-blue" onclick="copyFmWA()" style="margin-bottom:8px">Copier la feuille pour WhatsApp</button>`;
 
-  if(nPresent >= 10){
-    // Bouton générer équipes
-    html += `<button class="btn btn-go" onclick="fmGenerateTeams()">Générer les équipes (${nPresent} présents)</button>`;
+  if(n >= 10){
+    html += `<button class="btn btn-go" onclick="fmGenerateTeams()">Générer les équipes</button>`;
 
-    // Si équipes déjà générées
-    if(fmTeamA.length && fmTeamB.length){
-      const sA = (fmTeamA.reduce((s,n)=>{const p=PLAYERS.find(x=>x.n===n);return s+(p?avg(p):0);},0)/fmTeamA.length).toFixed(2);
-      const sB = (fmTeamB.reduce((s,n)=>{const p=PLAYERS.find(x=>x.n===n);return s+(p?avg(p):0);},0)/fmTeamB.length).toFixed(2);
+    if(FM.team_a.length && FM.team_b.length){
+      const allPool = [...PLAYERS,...FM.invites];
+      const sA = (FM.team_a.reduce((s,nm)=>{const p=allPool.find(x=>x.n===nm);return s+(p?avg(p):0);},0)/FM.team_a.length).toFixed(2);
+      const sB = (FM.team_b.reduce((s,nm)=>{const p=allPool.find(x=>x.n===nm);return s+(p?avg(p):0);},0)/FM.team_b.length).toFixed(2);
       html += `<div class="fm-header" style="margin-top:10px">
         <div class="dash-section-title">Équipes générées</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
           <div>
             <div style="font-size:10px;font-weight:700;font-family:'Syne',sans-serif;letter-spacing:1px;text-transform:uppercase;color:var(--red);margin-bottom:4px">Équipe A · ${sA}</div>
-            ${fmTeamA.map(n=>{const p=PLAYERS.find(x=>x.n===n);return `<div style="font-size:13px;padding:3px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px"><span>${p?.e||'⚽'}</span>${esc(n)}</div>`;}).join('')}
+            ${FM.team_a.map(nm=>{const p=allPool.find(x=>x.n===nm);return `<div style="font-size:13px;padding:4px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px"><span>${p?.e||'⚽'}</span>${esc(nm)}</div>`;}).join('')}
           </div>
           <div>
             <div style="font-size:10px;font-weight:700;font-family:'Syne',sans-serif;letter-spacing:1px;text-transform:uppercase;color:var(--blue);margin-bottom:4px">Équipe B · ${sB}</div>
-            ${fmTeamB.map(n=>{const p=PLAYERS.find(x=>x.n===n);return `<div style="font-size:13px;padding:3px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px"><span>${p?.e||'⚽'}</span>${esc(n)}</div>`;}).join('')}
+            ${FM.team_b.map(nm=>{const p=allPool.find(x=>x.n===nm);return `<div style="font-size:13px;padding:4px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px"><span>${p?.e||'⚽'}</span>${esc(nm)}</div>`;}).join('')}
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <button class="btn btn-blue" style="margin:0" onclick="fmShowPitch()">Voir terrain PNG</button>
-          <button class="btn btn-go" style="margin:0" onclick="document.getElementById('fm-score-modal').style.display='flex'">Match joué !</button>
+          <button class="btn btn-blue" style="margin:0" onclick="fmShowPitch()">PNG terrain</button>
+          <button class="btn btn-go" style="margin:0" onclick="fmCopyTeamsWA()">Copier WhatsApp</button>
         </div>
+        <button class="btn btn-secondary" style="margin-top:8px" onclick="document.getElementById('fm-score-modal').style.display='flex'">Entrer le score</button>
       </div>`;
     }
-  } else if(nPresent > 0){
-    html += `<div style="text-align:center;font-size:13px;color:var(--muted);padding:10px 0">${10-nPresent} joueur${10-nPresent>1?'s':''} manquant${10-nPresent>1?'s':''} pour générer les équipes</div>`;
-    if(nIncertain > 0){
-      html += `<button class="btn btn-secondary" onclick="fmConfirmIncertains()">Confirmer les incertains comme présents (${nIncertain})</button>`;
-    }
+  } else {
+    html += `<div style="text-align:center;font-size:13px;color:var(--muted);padding:8px 0;background:var(--surface);border-radius:10px;border:1px solid var(--border)">${10-n} joueur${10-n>1?'s':''} manquant${10-n>1?'s':''} pour générer</div>`;
   }
 
-  html += `<button class="btn btn-danger" style="margin-top:8px" onclick="resetFeuille()">Réinitialiser la feuille</button>`;
-  document.getElementById('fm-actions').innerHTML = html;
+  html += `<button class="btn btn-danger" style="margin-top:10px" onclick="resetFeuille()">Nouvelle feuille</button>`;
+  html += '</div>';
+
+  document.getElementById('fm-body').innerHTML = html;
 }
 
-// ── Menu statut ──
-function openFmMenu(name){
+function fmRow(p, isPresent){
+  const safe = p.n.replace(/'/g,"\\'");
+  return `<div class="fm-player ${isPresent?'fm-present':''}" onclick="openFmMenu('${safe}',${isPresent})">
+    <div class="fm-player-emoji">${p.e||'⚽'}</div>
+    <div class="fm-player-info">
+      <div class="fm-player-name">${esc(p.n)}</div>
+      ${p.a?`<div class="fm-player-alias">"${esc(p.a)}"</div>`:''}
+    </div>
+    <div class="fm-player-score">${avg(p).toFixed(2)}</div>
+    <div class="fm-status-badge">${isPresent?'✅':'○'}</div>
+  </div>`;
+}
+
+// ── Toggle présence ──
+function openFmMenu(name, isPresent){
   fmMenuPlayer = name;
+  fmMenuIsPresent = isPresent;
+  const action = isPresent ? 'Retirer des présents' : 'Marquer présent';
+  const icon   = isPresent ? '❌' : '✅';
   document.getElementById('fm-menu-player-name').textContent = name;
+  document.getElementById('fm-menu-action-icon').textContent = icon;
+  document.getElementById('fm-menu-action-label').textContent = action;
   document.getElementById('fm-menu').style.display = 'flex';
 }
 function closeFmMenu(){
-  document.getElementById('fm-menu').style.display = 'none';
-  fmMenuPlayer = null;
+  document.getElementById('fm-menu').style.display='none';
+  fmMenuPlayer=null;
 }
-function setStatus(name, status){
+async function fmTogglePlayer(name){
   if(!name) return;
-  fmStatuses[name] = status;
-  fmTeamA = []; fmTeamB = []; // réinitialiser équipes si statut change
-  saveFeuille();
+  if(fmMenuIsPresent){
+    FM.presents = FM.presents.filter(n=>n!==name);
+  } else {
+    if(FM.presents.length>=10){showToast('10 joueurs max',true);closeFmMenu();return;}
+    FM.presents.push(name);
+  }
+  FM.team_a=[]; FM.team_b=[];
   closeFmMenu();
+  await fmSave();
   renderFeuille();
 }
 
-// ── Générer équipes depuis la feuille ──
-function fmGenerateTeams(){
-  const presents = PLAYERS.filter(p=>fmStatuses[p.n]==='present');
-  if(presents.length < 2) return;
-  const pool = presents.slice(0,10);
+// ── Invités ──
+async function fmAddGuest(){
+  const n = document.getElementById('fm-guest-name').value.trim();
+  if(!n){showToast('Prénom requis',true);return;}
+  const allPool=[...PLAYERS,...FM.invites];
+  if(allPool.find(p=>p.n===n)){showToast('Nom déjà utilisé',true);return;}
+  const pr = PROFILES[document.getElementById('fm-guest-profile').value];
+  FM.invites.push({n,a:'Invité',e:'👤',...pr});
+  FM.presents.push(n);
+  FM.team_a=[]; FM.team_b=[];
+  document.getElementById('fm-guest-name').value='';
+  await fmSave();
+  renderFeuille();
+}
+
+// ── Générer équipes ──
+async function fmGenerateTeams(){
+  const allPool = [...PLAYERS,...FM.invites];
+  const pool = FM.presents.slice(0,10).map(n=>allPool.find(p=>p.n===n)).filter(Boolean);
+  if(pool.length<2) return;
   const {A,B} = bestSplit(pool);
-  fmTeamA = A.map(p=>p.n);
-  fmTeamB = B.map(p=>p.n);
-  saveFeuille();
+  FM.team_a = A.map(p=>p.n);
+  FM.team_b = B.map(p=>p.n);
+  await fmSave();
   renderFeuille();
   showToast('Équipes générées !');
 }
 
-// ── Terrain PNG ──
+// ── PNG terrain ──
 function fmShowPitch(){
-  const tA = fmTeamA.map(n=>PLAYERS.find(p=>p.n===n)).filter(Boolean);
-  const tB = fmTeamB.map(n=>PLAYERS.find(p=>p.n===n)).filter(Boolean);
-  currentA = tA; currentB = tB;
-  currentSA = tA.length?(tA.reduce((s,p)=>s+avg(p),0)/tA.length).toFixed(2):'—';
-  currentSB = tB.length?(tB.reduce((s,p)=>s+avg(p),0)/tB.length).toFixed(2):'—';
+  const allPool=[...PLAYERS,...FM.invites];
+  currentA = FM.team_a.map(n=>allPool.find(p=>p.n===n)).filter(Boolean);
+  currentB = FM.team_b.map(n=>allPool.find(p=>p.n===n)).filter(Boolean);
+  currentSA = currentA.length?(currentA.reduce((s,p)=>s+avg(p),0)/currentA.length).toFixed(2):'—';
+  currentSB = currentB.length?(currentB.reduce((s,p)=>s+avg(p),0)/currentB.length).toFixed(2):'—';
   document.getElementById('pitch-overlay').style.display='flex';
   drawPitch();
 }
 
-// ── Match joué → enregistrer le score ──
-async function saveFmMatch(){
-  const date = document.getElementById('fm-date').value || new Date().toISOString().split('T')[0];
-  const sA = parseInt(document.getElementById('fm-score-a').value)||0;
-  const sB = parseInt(document.getElementById('fm-score-b').value)||0;
-  if(!fmTeamA.length || !fmTeamB.length){showToast('Génère les équipes d\'abord',true);return;}
-  setSyncDot('loading');
-  try{
-    await dbInsert('matches',{id:Date.now(),date,team_a:fmTeamA,team_b:fmTeamB,score_a:sA,score_b:sB});
-    MATCHES = await dbGet('matches','order=date.desc');
-    setSyncDot('ok');
-    document.getElementById('fm-score-modal').style.display='none';
-    // Réinitialiser les équipes de la feuille après enregistrement
-    fmTeamA=[]; fmTeamB=[];
-    saveFeuille();
-    renderFeuille();
-    showToast('Match enregistré !');
-  }catch(e){setSyncDot('err');showToast('Erreur sauvegarde',true);}
+// ── Copier équipes WhatsApp ──
+function fmCopyTeamsWA(){
+  const t = FM.heure||'20h30';
+  const txt = `⚽ ÉQUIPES DU SOIR — ${t}\n\n🔴 Équipe A\n${FM.team_a.map(n=>'• '+n).join('\n')}\n\n🔵 Équipe B\n${FM.team_b.map(n=>'• '+n).join('\n')}`;
+  navigator.clipboard.writeText(txt).then(()=>showToast('Copié !'));
 }
 
-// ── Copier feuille WhatsApp ──
+// ── Copier feuille présents/absents WhatsApp ──
 function copyFmWA(){
-  const groups = {present:[], incertain:[], reserve:[], absent:[]};
-  PLAYERS.forEach(p=>{ groups[fmStatuses[p.n]||'absent'].push(p.n); });
-  const time = document.getElementById('fm-time')?.value || '20h30';
-  let txt = `📋 FEUILLE DE MATCH — ${time}\n\n`;
-  if(groups.present.length) txt+=`✅ Présents (${groups.present.length})\n${groups.present.map(n=>'• '+n).join('\n')}\n\n`;
-  if(groups.incertain.length) txt+=`🟡 Incertains\n${groups.incertain.map(n=>'• '+n).join('\n')}\n\n`;
-  if(groups.reserve.length) txt+=`🔵 Réserve\n${groups.reserve.map(n=>'• '+n).join('\n')}\n\n`;
-  if(groups.absent.length) txt+=`❌ Absents\n${groups.absent.map(n=>'• '+n).join('\n')}`;
+  const allPool=[...PLAYERS,...FM.invites];
+  const presentSet=new Set(FM.presents);
+  const pres=allPool.filter(p=>presentSet.has(p.n)).map(p=>p.n);
+  const abs=allPool.filter(p=>!presentSet.has(p.n)).map(p=>p.n);
+  const t=FM.heure||'20h30';
+  let txt=`📋 FEUILLE DE MATCH — ${t}\n\n`;
+  if(pres.length) txt+=`✅ Présents (${pres.length})\n${pres.map(n=>'• '+n).join('\n')}\n\n`;
+  if(abs.length) txt+=`❌ Pas encore confirmé\n${abs.map(n=>'• '+n).join('\n')}`;
   navigator.clipboard.writeText(txt).then(()=>showToast('Feuille copiée !'));
 }
 
-// ── Confirmer incertains ──
-function fmConfirmIncertains(){
-  PLAYERS.forEach(p=>{ if(fmStatuses[p.n]==='incertain') fmStatuses[p.n]='present'; });
-  saveFeuille(); renderFeuille();
+// ── Enregistrer le score ──
+async function saveFmMatch(){
+  const date = FM.date || new Date().toISOString().split('T')[0];
+  const sA = parseInt(document.getElementById('fm-score-a').value)||0;
+  const sB = parseInt(document.getElementById('fm-score-b').value)||0;
+  if(!FM.team_a.length||!FM.team_b.length){showToast('Génère les équipes d\'abord',true);return;}
+  setSyncDot('loading');
+  try{
+    await dbInsert('matches',{id:Date.now(),date,team_a:FM.team_a,team_b:FM.team_b,score_a:sA,score_b:sB});
+    MATCHES=await dbGet('matches','order=date.desc');
+    setSyncDot('ok');
+    document.getElementById('fm-score-modal').style.display='none';
+    showToast('Match enregistré !');
+  }catch(e){setSyncDot('err');showToast('Erreur',true);}
 }
 
 // ── Réinitialiser ──
-function resetFeuille(){
-  if(!confirm('Réinitialiser la feuille ? Les statuts seront effacés.')) return;
-  fmStatuses={};
-  fmTeamA=[]; fmTeamB=[];
-  PLAYERS.forEach(p=>{ fmStatuses[p.n]='absent'; });
-  saveFeuille(); renderFeuille();
+async function resetFeuille(){
+  if(!confirm('Démarrer une nouvelle feuille ? La feuille actuelle sera effacée.')) return;
+  FM={presents:[],invites:[],team_a:[],team_b:[],date:new Date().toISOString().split('T')[0],heure:'20:30'};
+  await fmSave();
+  renderFeuille();
 }
 
 // Lancement
@@ -2257,6 +2284,7 @@ async function init() {
     }
     PLAYERS=players;
     MATCHES=await dbGet('matches','order=date.desc');
+    await fmLoad(); // charger la feuille active
     setSyncDot('ok');
     document.getElementById('loading-screen').style.display='none';
 
